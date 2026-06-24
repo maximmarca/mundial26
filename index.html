@@ -45,6 +45,7 @@ body[data-theme="bold"] .panel .acc,body[data-theme="bold"] .gcard .acc{height:6
 body[data-theme="bold"] .pill.active{transform:scale(1.05)}
 body[data-theme="bold"] .panel,body[data-theme="bold"] .gcard{background:#fdfbff;border-color:rgba(30,107,255,.16)}
 *{box-sizing:border-box}
+@media (prefers-reduced-motion: reduce){*{transition:none !important;animation:none !important}}
 html,body{overflow-x:hidden}
 body{margin:0;background:var(--page-bg) fixed;color:var(--text);
   font-family:"Bahnschrift","Segoe UI",Tahoma,sans-serif;font-size:14px;
@@ -158,10 +159,15 @@ table{width:100%;border-collapse:collapse;font-size:13px}
 /* ---------- Figuritas ---------- */
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:14px}
 .fig{width:100%;aspect-ratio:164/226;perspective:900px;cursor:pointer}
-.fig-in{position:relative;width:100%;height:100%;transition:transform .6s;transform-style:preserve-3d}
+.fig-in{position:relative;width:100%;height:100%;transform-style:preserve-3d;
+  transition:transform .6s cubic-bezier(.2,.7,.2,1)}
 .fig.flip .fig-in{transform:rotateY(180deg)}
 .face{position:absolute;inset:0;backface-visibility:hidden;border-radius:14px;overflow:hidden;
   border:3px solid var(--edge);box-shadow:0 4px 10px rgba(0,0,0,.12)}
+.face::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:radial-gradient(circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,.40),transparent 46%);
+  mix-blend-mode:screen;opacity:0;transition:opacity .25s}
+.fig.tilt .face::after{opacity:.9}
 .back{transform:rotateY(180deg)}
 /* tiers */
 .t-oro{--edge:#8a5a00;--tint:#ee9b00;--band:#ffd66b;--g1:#ffebaa;--g2:#c9941e}
@@ -189,7 +195,9 @@ table{width:100%;border-collapse:collapse;font-size:13px}
 .front .pho{width:74px;height:74px;border-radius:50%;object-fit:cover;margin:4px 0;
   border:3px solid #fff;outline:2px solid var(--edge);background:#dfe5f0}
 .front .pho.ph{display:flex;align-items:center;justify-content:center;
-  font-family:"Bahnschrift SemiBold Condensed";font-size:24px;color:#16203a}
+  font-family:"Bahnschrift SemiBold Condensed";font-size:24px;color:#3a455f}
+.front .phwrap{position:relative;width:74px;height:74px;margin:4px 0}
+.front .phwrap .pho{position:absolute;inset:0;margin:0}
 .front .nm{font-weight:bold;font-size:16px;text-align:center;line-height:1}
 .front .co{font-size:10px;opacity:.8;margin-bottom:4px}
 .front .badges{display:flex;gap:6px;margin-top:auto;width:100%}
@@ -659,8 +667,8 @@ function figHtml(p,i){
   const ph=flagUrl(p.t);
   const photo=PHOTOS[p.n];
   const ini=esc((p.n.split(/[\s.\-]+/).filter(Boolean).map(w=>w[0]).slice(0,2).join("")||"?").toUpperCase());
-  const av=photo?`<img class="pho" src="${photo}" alt="" loading="lazy" referrerpolicy="no-referrer">`:
-    `<div class="pho ph">${ini}</div>`;
+  const av=`<div class="phwrap"><div class="pho ph">${ini}</div>${
+    photo?`<img class="pho" src="${photo}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`:""}</div>`;
   const stars={oro:"★★★",plata:"★★",bronce:"★"}[tier];
   // front
   const front=`<div class="face front">
@@ -688,7 +696,24 @@ function figHtml(p,i){
   return `<div class="fig t-${tier} ${top3?"top3":""} ${FLIP[id]?"flip":""}" id="${id}" onclick="flip('${id}')">
     <div class="fig-in">${front}${back}</div></div>`;
 }
-function flip(id){FLIP[id]=!FLIP[id];const el=document.getElementById(id);el.classList.toggle("flip");}
+function flip(id){FLIP[id]=!FLIP[id];const el=document.getElementById(id);
+  el.classList.toggle("flip");el.style.transform="";el.classList.remove("tilt");}
+function attachTilt(){
+  if(window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  if(window.matchMedia("(hover: none)").matches) return;  // mobile/touch: sin tilt (solo tap-flip)
+  document.querySelectorAll(".fig").forEach(card=>{
+    card.addEventListener("mousemove",e=>{
+      if(card.classList.contains("flip"))return;
+      const r=card.getBoundingClientRect();
+      const px=(e.clientX-r.left)/r.width-.5, py=(e.clientY-r.top)/r.height-.5;
+      card.style.transform=`perspective(820px) rotateX(${(-py*9).toFixed(2)}deg) rotateY(${(px*9).toFixed(2)}deg) scale(1.03)`;
+      card.style.setProperty("--mx",((px+.5)*100).toFixed(1)+"%");
+      card.style.setProperty("--my",((py+.5)*100).toFixed(1)+"%");
+      card.classList.add("tilt");
+    });
+    card.addEventListener("mouseleave",()=>{card.style.transform="";card.classList.remove("tilt");});
+  });
+}
 function setStyle(s){ESTILO=s;renderStats();}
 function renderStats(){
   const gs=goleadores();
@@ -717,6 +742,7 @@ function renderStats(){
     <div class="panel narrow"><div class="acc" style="background:var(--gold)"></div>
       <h2>RÉCORDS DEL TORNEO</h2>
       <div class="pbody"><table class="rank"><tbody>${recRows}</tbody></table></div></div>`;
+  attachTilt();
 }
 let _bajando=false;
 function spinnerTxt(){return _bajando?"· descargando fotos…":"";}
@@ -778,7 +804,7 @@ window.addEventListener("resize",bannerLines);
 
 /* ---------- Temas ---------- */
 const THEMES_UI=[["airy","Claro"],["glass","Oscuro"],["bold","Vibrante"]];
-let THEME=localStorage.getItem("wc26theme")||"glass";
+let THEME=localStorage.getItem("wc26theme2")||"glass";
 function applyTheme(){
   if(THEME==="airy")document.body.removeAttribute("data-theme");
   else document.body.setAttribute("data-theme",THEME);
@@ -786,7 +812,7 @@ function applyTheme(){
     `<button class="tbtn ${THEME===k?"on":""}" onclick="setTheme('${k}')">${d}</button>`).join("");
   bannerLines();
 }
-function setTheme(t){THEME=t;localStorage.setItem("wc26theme",t);applyTheme();}
+function setTheme(t){THEME=t;localStorage.setItem("wc26theme2",t);applyTheme();}
 
 /* ============================ INIT ============================ */
 renderTabs();applyTheme();bannerLines();cargar(false);
