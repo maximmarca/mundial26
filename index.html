@@ -136,6 +136,16 @@ table{width:100%;border-collapse:collapse;font-size:13px}
 .rkpos{display:inline-block;min-width:30px;text-align:center;font-weight:bold;color:var(--blue);
   background:var(--th-bg);border-radius:7px;padding:1px 5px;margin-right:8px}
 .rank tr td .flag{margin:0 6px}
+.ftwrap{overflow-x:auto}
+.rank th.sortable{cursor:pointer;user-select:none;white-space:nowrap}
+.rank th.sortable:hover{color:var(--text)}
+.dot{display:inline-block;width:11px;height:11px;border-radius:50%;margin:0 1px;vertical-align:middle}
+.dot.w{background:var(--green)} .dot.d{background:#c9a227} .dot.l{background:var(--red)}
+.streak{font-size:10px;color:var(--muted);margin-left:8px;white-space:nowrap}
+.fbar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.fbtn{border:1px solid var(--line2);background:var(--pill-bg);color:var(--muted);border-radius:20px;
+  padding:5px 12px;font-size:12px;font-weight:bold}
+.fbtn.on{background:var(--blue);color:#fff;border-color:transparent}
 
 /* ---------- Cuadro ---------- */
 .bracket-scroll{overflow:auto;border:1px solid var(--line);border-radius:var(--radius);
@@ -336,6 +346,24 @@ const RANKING_FIFA={"Argentina":1,"Spain":2,"France":3,"England":4,"Portugal":5,
 "Ivory Coast":33,"Panama":34,"Sweden":38,"Czech Republic":40,"Paraguay":41,"Scotland":42,
 "Tunisia":45,"DR Congo":46,"Uzbekistan":50,"Qatar":56,"Iraq":57,"South Africa":60,"Saudi Arabia":61,
 "Jordan":63,"Bosnia & Herzegovina":64,"Cape Verde":67,"Ghana":73,"Curaçao":82,"Haiti":83,"New Zealand":85};
+/* [confederacion, titulos mundiales, finales jugadas, participaciones (incl. 2026)] — historico aprox. */
+const CONFEDS=["UEFA","CONMEBOL","CONCACAF","CAF","AFC","OFC"];
+const TEAMINFO={
+"Argentina":["CONMEBOL",3,6,19],"Brazil":["CONMEBOL",5,7,23],"Uruguay":["CONMEBOL",2,2,15],
+"Colombia":["CONMEBOL",0,0,7],"Ecuador":["CONMEBOL",0,0,5],"Paraguay":["CONMEBOL",0,0,9],
+"Spain":["UEFA",1,1,17],"France":["UEFA",2,4,17],"England":["UEFA",1,1,17],"Portugal":["UEFA",0,0,9],
+"Netherlands":["UEFA",0,3,12],"Belgium":["UEFA",0,0,15],"Germany":["UEFA",4,8,21],"Croatia":["UEFA",0,1,7],
+"Switzerland":["UEFA",0,0,13],"Turkey":["UEFA",0,0,3],"Austria":["UEFA",0,0,8],"Norway":["UEFA",0,0,4],
+"Sweden":["UEFA",0,1,13],"Czech Republic":["UEFA",0,0,11],"Scotland":["UEFA",0,0,9],
+"Bosnia & Herzegovina":["UEFA",0,0,2],
+"Mexico":["CONCACAF",0,0,18],"USA":["CONCACAF",0,0,12],"Canada":["CONCACAF",0,0,3],
+"Panama":["CONCACAF",0,0,2],"Curaçao":["CONCACAF",0,0,1],"Haiti":["CONCACAF",0,0,2],
+"Morocco":["CAF",0,0,7],"Senegal":["CAF",0,0,4],"Algeria":["CAF",0,0,5],"Egypt":["CAF",0,0,4],
+"Ivory Coast":["CAF",0,0,4],"Tunisia":["CAF",0,0,7],"DR Congo":["CAF",0,0,2],"South Africa":["CAF",0,0,4],
+"Ghana":["CAF",0,0,5],"Cape Verde":["CAF",0,0,1],
+"Japan":["AFC",0,0,8],"Iran":["AFC",0,0,7],"South Korea":["AFC",0,0,12],"Australia":["AFC",0,0,7],
+"Qatar":["AFC",0,0,2],"Iraq":["AFC",0,0,2],"Saudi Arabia":["AFC",0,0,7],"Jordan":["AFC",0,0,1],
+"Uzbekistan":["AFC",0,0,1],"New Zealand":["OFC",0,0,3]};
 const THEMES={
 "ar":{pri:"#75AADB",sec:"#FFFFFF",acc:"#F6B40E",dark:"#1B3A57"},
 "fr":{pri:"#0055A4",sec:"#FFFFFF",acc:"#EF4135",dark:"#102A56"},
@@ -358,6 +386,7 @@ const DEF_THEME={pri:"#3a567a",sec:"#ffffff",acc:"#2ba4ff",dark:"#152238"};
 /* ============================ ESTADO ============================ */
 let DATA=null, GM=[], META={}, SCORES={}, REAL={}, KOWIN={}, KOREAL={}, RES={};
 let TABLAS={}, MAPA3={}, KORES={}, ESTILO="spotlight", FLIP={}, PHOTOS={};
+let FSORT="fifa", FDIR=1, FFILTER="all";
 
 /* ============================ UTILS ============================ */
 const flagUrl=t=>ISO[t]?`https://flagcdn.com/w40/${ISO[t]}.png`:"";
@@ -710,14 +739,59 @@ function figHtml(p,i){
   return `<div class="fig t-${tier} ${top3?"top3":""} ${FLIP[id]?"flip":""}" id="${id}" onclick="flip('${id}')">
     <div class="fig-in">${front}${back}</div></div>`;
 }
+function statsTorneo(){
+  const st={};
+  const ms=(DATA.matches||[]).filter(x=>{const ft=(x.score||{}).ft;
+    return Array.isArray(ft)&&ft.length===2&&x.team1&&x.team2&&!esEtiqueta(x.team1)&&!esEtiqueta(x.team2);})
+    .slice().sort((a,b)=>(a.date||"").localeCompare(b.date||""));
+  for(const x of ms){const a=+x.score.ft[0],b=+x.score.ft[1];
+    for(const[team,gf,gc]of[[x.team1,a,b],[x.team2,b,a]]){
+      const s=st[team]||(st[team]={pj:0,g:0,e:0,p:0,gf:0,gc:0,seq:[]});
+      s.pj++;s.gf+=gf;s.gc+=gc;
+      if(gf>gc){s.g++;s.seq.push("w");}else if(gf<gc){s.p++;s.seq.push("l");}else{s.e++;s.seq.push("d");}}}
+  for(const t in st){const s=st[t];s.pts=s.g*3+s.e;s.dg=s.gf-s.gc;
+    s.invicto=s.pj>0&&s.p===0;let r=0;for(let i=s.seq.length-1;i>=0;i--){if(s.seq[i]==="w")r++;else break;}s.rachaV=r;}
+  return st;
+}
+function formaHtml(s){
+  if(!s||!s.pj)return `<span class="streak">sin jugar</span>`;
+  const dots=s.seq.slice(-5).map(r=>`<span class="dot ${r}"></span>`).join("");
+  let ex=s.rachaV>=2?(s.rachaV+"V"):(s.invicto?"Invicto":"");
+  return `${dots}<span class="streak">${ex?ex+" · ":""}${s.g}-${s.e}-${s.p} · ${s.gf>=s.gc?"+":""}${s.dg}</span>`;
+}
+function setFifaSort(k){ if(FSORT===k)FDIR*=-1; else {FSORT=k;FDIR=1;} renderFifa(); }
+function setFifaFilter(c){ FFILTER=c; renderFifa(); }
 function renderFifa(){
-  const eqset=new Set();for(const m of GM){eqset.add(m.t1);eqset.add(m.t2);}
-  const eqs=[...eqset].sort((a,b)=>(RANKING_FIFA[a]||999)-(RANKING_FIFA[b]||999));
-  const rows=eqs.map(t=>`<tr><td><span class="rkpos">${RANKING_FIFA[t]||"-"}</span>${flagImg(t)}${esc(t)}</td></tr>`).join("");
-  document.getElementById("tab-fifa").innerHTML=`<div class="panel narrow">
+  const ST=statsTorneo();
+  const inf=t=>TEAMINFO[t]||["?",0,0,0];
+  let eqs=[...new Set(GM.flatMap(m=>[m.t1,m.t2]))];
+  if(FFILTER!=="all")eqs=eqs.filter(t=>inf(t)[0]===FFILTER);
+  const cmp={
+    fifa:(a,b)=>(RANKING_FIFA[a]||999)-(RANKING_FIFA[b]||999),
+    mun:(a,b)=>inf(b)[3]-inf(a)[3],
+    tit:(a,b)=>inf(b)[1]-inf(a)[1]||inf(b)[2]-inf(a)[2],
+    forma:(a,b)=>((ST[b]||{}).pts||0)-((ST[a]||{}).pts||0)||((ST[b]||{}).dg||0)-((ST[a]||{}).dg||0),
+  }[FSORT];
+  eqs.sort((a,b)=>{let v=cmp(a,b)*FDIR; if(v===0)v=(RANKING_FIFA[a]||999)-(RANKING_FIFA[b]||999); return v;});
+  const arrow=k=>FSORT===k?(FDIR>0?" ▾":" ▴"):"";
+  const rows=eqs.map(t=>{const i=inf(t);
+    return `<tr><td><span class="rkpos">${RANKING_FIFA[t]||"-"}</span>${flagImg(t)}${esc(t)}</td>
+      <td class="center">${i[0]}</td><td class="center">${i[3]}</td>
+      <td class="center" title="Finales jugadas: ${i[2]}">${i[1]?("🏆 "+i[1]):"–"}</td>
+      <td>${formaHtml(ST[t])}</td></tr>`;}).join("");
+  const fbar=`<div class="fbar"><button class="fbtn ${FFILTER==='all'?'on':''}" onclick="setFifaFilter('all')">Todas</button>`+
+    CONFEDS.map(c=>`<button class="fbtn ${FFILTER===c?'on':''}" onclick="setFifaFilter('${c}')">${c}</button>`).join("")+`</div>`;
+  document.getElementById("tab-fifa").innerHTML=`<div class="panel">
     <div class="acc" style="background:var(--cyan)"></div>
-    <h2>RANKING FIFA</h2><div class="psub">Ranking mundial masculino · actualizado 11/06/2026 · ${eqs.length} selecciones</div>
-    <div class="pbody"><table class="rank"><tbody>${rows}</tbody></table></div></div>`;
+    <h2>RANKING FIFA</h2>
+    <div class="psub">Ranking 11/06/2026 · históricos aprox. · forma = Mundial 2026 (clic en encabezados para ordenar)</div>
+    <div class="pbody">${fbar}<div class="ftwrap"><table class="rank"><thead><tr>
+      <th class="sortable" onclick="setFifaSort('fifa')">SELECCIÓN${arrow('fifa')}</th>
+      <th class="center">CONF</th>
+      <th class="center sortable" onclick="setFifaSort('mun')">MUN${arrow('mun')}</th>
+      <th class="center sortable" onclick="setFifaSort('tit')">🏆${arrow('tit')}</th>
+      <th class="sortable" onclick="setFifaSort('forma')">FORMA 2026${arrow('forma')}</th>
+    </tr></thead><tbody>${rows}</tbody></table></div></div></div>`;
 }
 function flip(id){FLIP[id]=!FLIP[id];const el=document.getElementById(id);
   el.classList.toggle("flip");el.style.transform="";el.classList.remove("tilt");}
