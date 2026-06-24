@@ -133,6 +133,9 @@ table{width:100%;border-collapse:collapse;font-size:13px}
 .rank tr.no td{background:var(--elim-bg);color:var(--elim-fg)}
 .rank tr.top3 td{background:var(--third-bg);color:var(--third-fg)}
 .center{text-align:center}
+.rkpos{display:inline-block;min-width:30px;text-align:center;font-weight:bold;color:var(--blue);
+  background:var(--th-bg);border-radius:7px;padding:1px 5px;margin-right:8px}
+.rank tr td .flag{margin:0 6px}
 
 /* ---------- Cuadro ---------- */
 .bracket-scroll{overflow:auto;border:1px solid var(--line);border-radius:var(--radius);
@@ -165,24 +168,33 @@ table{width:100%;border-collapse:collapse;font-size:13px}
 .face{position:absolute;inset:0;backface-visibility:hidden;border-radius:14px;overflow:hidden;
   border:3px solid var(--edge);box-shadow:0 4px 10px rgba(0,0,0,.12)}
 .face::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
-  background:radial-gradient(circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,.40),transparent 46%);
+  background:
+    radial-gradient(circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,.55),transparent 42%),
+    conic-gradient(from 0deg at var(--mx,50%) var(--my,50%),rgba(255,0,128,.22),rgba(0,230,255,.22),rgba(120,90,255,.22),rgba(255,210,0,.22),rgba(255,0,128,.22));
   mix-blend-mode:screen;opacity:0;transition:opacity .25s}
-.fig.tilt .face::after{opacity:.9}
+.fig.tilt .face::after{opacity:.85}
 .back{transform:rotateY(180deg)}
 /* tiers */
-.t-oro{--edge:#8a5a00;--tint:#ee9b00;--band:#ffd66b;--g1:#ffebaa;--g2:#c9941e}
-.t-plata{--edge:#828ba3;--tint:#aeb8c8;--band:#d7dee9;--g1:#eef3fa;--g2:#9aa6bd}
-.t-bronce{--edge:#8e5e34;--tint:#b56a32;--band:#e6a15c;--g1:#f1d1aa;--g2:#a5693a}
+.t-oro{--edge:#8a5a00;--tint:#ee9b00;--band:#ffd66b;--g1:#fff3c0;--gm:#eec23a;--g2:#a9780a}
+.t-plata{--edge:#828ba3;--tint:#aeb8c8;--band:#d7dee9;--g1:#ffffff;--gm:#d2dbe9;--g2:#929db6}
+.t-bronce{--edge:#8e5e34;--tint:#b56a32;--band:#e6a15c;--g1:#f6dcb6;--gm:#cf9b5f;--g2:#8a5a32}
 /* FRENTE */
 .front{display:flex;flex-direction:column;align-items:center;padding:8px;color:#16203a}
-.spotlight .front{background:
-  radial-gradient(circle at 50% 42%,rgba(255,255,255,.95),rgba(255,255,255,0) 55%),
-  repeating-linear-gradient(115deg,rgba(255,255,255,.18) 0 8px,transparent 8px 22px),
-  linear-gradient(var(--g1),var(--g2))}
-.spotlight .fig.top3 .front{background:
-  radial-gradient(circle at 50% 42%,rgba(255,255,255,.9),rgba(255,255,255,0) 50%),
-  repeating-conic-gradient(from 0deg at 50% 42%,var(--tint) 0 4deg,transparent 4deg 15deg),
-  linear-gradient(var(--g1),var(--g2))}
+/* metalizado + holografico */
+.spotlight .front{
+  background:
+    repeating-linear-gradient(110deg,rgba(255,0,150,.10) 0 9px,rgba(0,230,255,.10) 9px 18px,rgba(120,90,255,.10) 18px 27px,rgba(255,210,0,.10) 27px 36px),
+    linear-gradient(125deg,rgba(255,255,255,.6),transparent 24%,transparent 76%,rgba(255,255,255,.5)),
+    radial-gradient(circle at 50% 38%,rgba(255,255,255,.92),transparent 55%),
+    linear-gradient(160deg,var(--g1),var(--gm) 52%,var(--g2));
+  background-blend-mode:color-dodge,screen,normal,normal}
+.spotlight .fig.top3 .front{
+  background:
+    repeating-conic-gradient(from 0deg at 50% 38%,var(--tint) 0 4deg,transparent 4deg 15deg),
+    repeating-linear-gradient(110deg,rgba(255,0,150,.12) 0 9px,rgba(0,230,255,.12) 9px 18px,rgba(120,90,255,.12) 18px 27px,rgba(255,210,0,.12) 27px 36px),
+    radial-gradient(circle at 50% 38%,rgba(255,255,255,.9),transparent 52%),
+    linear-gradient(160deg,var(--g1),var(--gm) 52%,var(--g2));
+  background-blend-mode:overlay,color-dodge,normal,normal}
 .sticker .front{background:linear-gradient(#fff,#e8ebf1)}
 .hud .front{background:
   repeating-linear-gradient(0deg,rgba(255,255,255,.06) 0 1px,transparent 1px 22px),
@@ -285,6 +297,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}
   <div class="tabpage show" id="tab-grupos"></div>
   <div class="tabpage" id="tab-terceros"></div>
   <div class="tabpage" id="tab-cuadro"></div>
+  <div class="tabpage" id="tab-fifa"></div>
   <div class="tabpage" id="tab-stats"></div>
 </div>
 
@@ -485,6 +498,7 @@ function recalcular(){
   MAPA3=asignarTerceros(top8);
   renderTerceros(rank);
   resolverCuadro();renderCuadro();
+  renderFifa();
 }
 function restaurar(){RES={...REAL};SCORES={...REAL};KOWIN={...KOREAL};renderGrupos();recalcular();}
 
@@ -696,6 +710,15 @@ function figHtml(p,i){
   return `<div class="fig t-${tier} ${top3?"top3":""} ${FLIP[id]?"flip":""}" id="${id}" onclick="flip('${id}')">
     <div class="fig-in">${front}${back}</div></div>`;
 }
+function renderFifa(){
+  const eqset=new Set();for(const m of GM){eqset.add(m.t1);eqset.add(m.t2);}
+  const eqs=[...eqset].sort((a,b)=>(RANKING_FIFA[a]||999)-(RANKING_FIFA[b]||999));
+  const rows=eqs.map(t=>`<tr><td><span class="rkpos">${RANKING_FIFA[t]||"-"}</span>${flagImg(t)}${esc(t)}</td></tr>`).join("");
+  document.getElementById("tab-fifa").innerHTML=`<div class="panel narrow">
+    <div class="acc" style="background:var(--cyan)"></div>
+    <h2>RANKING FIFA</h2><div class="psub">Ranking mundial masculino · actualizado 11/06/2026 · ${eqs.length} selecciones</div>
+    <div class="pbody"><table class="rank"><tbody>${rows}</tbody></table></div></div>`;
+}
 function flip(id){FLIP[id]=!FLIP[id];const el=document.getElementById(id);
   el.classList.toggle("flip");el.style.transform="";el.classList.remove("tilt");}
 function attachTilt(){
@@ -717,11 +740,6 @@ function attachTilt(){
 function setStyle(s){ESTILO=s;renderStats();}
 function renderStats(){
   const gs=goleadores();
-  // ranking fifa
-  const eqset=new Set();for(const m of GM){eqset.add(m.t1);eqset.add(m.t2);}
-  const eqs=[...eqset].sort((a,b)=>(RANKING_FIFA[a]||999)-(RANKING_FIFA[b]||999));
-  let fifaRows=eqs.map(t=>`<tr><td>${flagImg(t)} ${esc(corto(t,22))}</td>
-    <td class="center"><b>#${RANKING_FIFA[t]||"-"}</b></td></tr>`).join("");
   let recRows=records().map(([k,v])=>`<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("");
   const total=gs.reduce((s,x)=>s+x.g,0);
   let cards=gs.map((p,i)=>figHtml(p,i)).join("");
@@ -735,10 +753,6 @@ function renderStats(){
         <div class="hint">ORO 5+ goles · PLATA 3-4 · BRONCE 1-2 · clic para ver el dorso ↺ ${spinnerTxt()}</div>
         <div class="cards ${ESTILO}">${cards||"(Sin goles aún)"}</div>
       </div></div>
-    <div class="panel narrow"><div class="acc" style="background:var(--blue)"></div>
-      <h2>RANKING FIFA</h2><div class="psub">Posición mundial (al 11/06/2026)</div>
-      <div class="pbody"><table class="rank"><thead><tr><th>SELECCIÓN</th><th class="center">FIFA</th></tr></thead>
-      <tbody>${fifaRows}</tbody></table></div></div>
     <div class="panel narrow"><div class="acc" style="background:var(--gold)"></div>
       <h2>RÉCORDS DEL TORNEO</h2>
       <div class="pbody"><table class="rank"><tbody>${recRows}</tbody></table></div></div>`;
@@ -778,7 +792,8 @@ async function bajarFotos(){
 
 /* ============================ TABS / BANNER ============================ */
 const TABDEF=[["grupos","FASE DE GRUPOS","#1e6bff"],["terceros","MEJORES TERCEROS","#ee9b00"],
-  ["cuadro","CUADRO / ELIMINATORIAS","#00b86b"],["stats","ESTADÍSTICAS","#e5103b"]];
+  ["cuadro","CUADRO / ELIMINATORIAS","#00b86b"],["fifa","RANKING FIFA","#00b8d4"],
+  ["stats","ESTADÍSTICAS","#e5103b"]];
 function renderTabs(){
   document.getElementById("tabs").innerHTML=TABDEF.map(([k,t,c],i)=>
     `<div class="pill ${i===0?"active":""}" id="pill-${k}" style="${i===0?"background:"+c:""}"
