@@ -7,14 +7,14 @@
 <style>
 :root{
   --bg:#edf1f8; --bg2:#f6f8fc; --card:#fff; --line:#e2e7f1; --line2:#cbd3e4;
-  --text:#16203a; --muted:#737e9c; --red:#e5103b; --green:#00b86b; --blue:#1e6bff;
+  --text:#16203a; --muted:#5b6580; --red:#e5103b; --green:#00b86b; --blue:#1e6bff;
   --cyan:#00b8d4; --gold:#ee9b00;
   --qual-bg:#e3f8ee; --qual-fg:#067d4b; --third-bg:#fff3d6; --third-fg:#8a5b00;
   --elim-bg:#fde7ec; --elim-fg:#b11233;
   /* themeables — por defecto: CLARO PREMIUM */
   --page-bg:linear-gradient(180deg,#f1f5fc,#e6edf7);
   --panel-bg:#ffffff; --th-bg:#f3f6fc; --input-bg:#f3f6fc; --pill-bg:#ffffff; --hover:#eaf1ff;
-  --banner-grad:linear-gradient(135deg,#ffffff,#e9f0ff); --banner-lines:.85;
+  --banner-grad:linear-gradient(135deg,#ffffff,#e9f0ff); --banner-lines:.55;
   --radius:16px; --blur:none;
   --shadow:0 10px 30px rgba(20,30,60,.10); --shadow-sm:0 3px 12px rgba(20,30,60,.08);
 }
@@ -43,6 +43,7 @@ body[data-theme="bold"] .panel h2,body[data-theme="bold"] .gcard h3{
 body[data-theme="bold"] .panel h2{font-size:24px}
 body[data-theme="bold"] .panel .acc,body[data-theme="bold"] .gcard .acc{height:6px}
 body[data-theme="bold"] .pill.active{transform:scale(1.05)}
+body[data-theme="bold"] .panel,body[data-theme="bold"] .gcard{background:#fdfbff;border-color:rgba(30,107,255,.16)}
 *{box-sizing:border-box}
 html,body{overflow-x:hidden}
 body{margin:0;background:var(--page-bg) fixed;color:var(--text);
@@ -69,18 +70,23 @@ button{font-family:inherit;cursor:pointer}
 
 /* ---------- Toolbar / tabs ---------- */
 .toolbar{display:flex;gap:8px;align-items:center;padding:10px 14px;flex-wrap:wrap}
-.btn{border:0;border-radius:8px;padding:9px 16px;color:#fff;font-weight:bold;font-size:13px}
+.btn{border:0;border-radius:10px;padding:10px 16px;color:#fff;font-weight:bold;font-size:13px;
+  transition:all .15s ease;box-shadow:var(--shadow-sm)}
 .btn.blue{background:var(--blue)} .btn.green{background:var(--green)}
 .btn.ghost{background:var(--panel-bg);color:var(--text);border:1px solid var(--line)}
-.btn:hover{filter:brightness(.94)}
+.btn:hover{filter:brightness(.97);transform:translateY(-1px);box-shadow:var(--shadow)}
+.btn:active{transform:translateY(0)}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 .status{color:var(--muted);font-size:12px;align-self:center}
 .tabs{display:flex;gap:8px;padding:6px 14px;flex-wrap:wrap}
 .pill{border:1px solid var(--line2);background:var(--pill-bg);color:var(--muted);
   border-radius:18px;padding:8px 18px;font-weight:bold;font-size:13px;box-shadow:var(--shadow-sm);
   transition:transform .12s,box-shadow .12s}
 .pill.active{color:#fff;border-color:transparent}
-.tabwrap{padding:6px 14px 30px}
-.tabpage{display:none} .tabpage.show{display:block}
+.tabwrap{padding:6px 14px 30px;max-width:1220px;margin:0 auto}
+.tabpage{display:none} .tabpage.show{display:block;animation:fade .22s ease}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.pill:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
 .hint{color:var(--muted);font-size:12px;margin:6px 0 12px}
 
 /* ---------- Grupos ---------- */
@@ -92,7 +98,8 @@ button{font-family:inherit;cursor:pointer}
 .gcard .acc{height:4px}
 .gcard h3{padding:8px 12px 2px;font-size:17px}
 table{width:100%;border-collapse:collapse;font-size:13px}
-.stand th{background:var(--th-bg);color:var(--muted);font-size:11px;text-align:center;padding:5px}
+.stand th{background:var(--th-bg);color:var(--muted);font-size:12px;font-weight:600;
+  letter-spacing:.04em;text-align:center;padding:6px 5px}
 .stand th:first-child,.stand td:first-child{text-align:left}
 .stand td{padding:4px 6px;border-top:1px solid var(--line)}
 .stand tr.q td{background:var(--qual-bg);color:var(--qual-fg)}
@@ -101,20 +108,25 @@ table{width:100%;border-collapse:collapse;font-size:13px}
   box-shadow:0 0 0 1px rgba(0,0,0,.08)}
 .matches{padding:6px 12px 12px}
 .mrow{display:flex;align-items:center;gap:4px;padding:2px 0;font-size:12px}
-.mrow .t1{flex:1;text-align:right} .mrow .t2{flex:1;text-align:left}
-.mrow input{width:26px;text-align:center;border:1px solid var(--line);border-radius:6px;
-  padding:3px;background:var(--input-bg);color:var(--text);font-family:inherit;font-weight:bold}
+.mrow .t1,.mrow .t2{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.mrow .t1{text-align:right} .mrow .t2{text-align:left}
+.mrow input{width:30px;text-align:center;border:1px solid var(--line);border-radius:6px;
+  padding:4px;background:var(--input-bg);color:var(--text);font-family:inherit;font-weight:bold;
+  transition:border-color .15s,box-shadow .15s}
+.mrow input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(30,107,255,.18)}
 
 /* ---------- tablas genericas ---------- */
 .panel{background:var(--panel-bg);border:1px solid var(--line);border-radius:var(--radius);
   overflow:hidden;margin:14px 0;box-shadow:var(--shadow);
   -webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur)}
+.panel.narrow{max-width:760px;margin-left:auto;margin-right:auto}
 .panel .acc{height:4px}
 .panel h2{padding:8px 14px 0;font-size:18px}
 .panel .psub{padding:0 14px 6px;color:var(--muted);font-size:12px}
 .panel .pbody{padding:0 14px 14px}
 .rank{width:100%;border-collapse:collapse;font-size:13px}
-.rank th{background:var(--th-bg);color:var(--muted);font-size:11px;padding:6px 8px;text-align:left}
+.rank th{background:var(--th-bg);color:var(--muted);font-size:12px;font-weight:600;
+  letter-spacing:.04em;padding:7px 8px;text-align:left}
 .rank td{padding:4px 7px;border-top:1px solid var(--line)}
 .rank tr.ok td{background:var(--qual-bg);color:var(--qual-fg)}
 .rank tr.no td{background:var(--elim-bg);color:var(--elim-fg)}
@@ -126,7 +138,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}
   background:var(--panel-bg);box-shadow:var(--shadow-sm)}
 .bracket{position:relative}
 .bracket svg{position:absolute;inset:0;pointer-events:none}
-.mbox{position:absolute;width:184px;background:var(--panel-bg);border:1px solid var(--line);
+.mbox{position:absolute;width:156px;background:var(--panel-bg);border:1px solid var(--line);
   border-radius:10px;box-shadow:var(--shadow-sm);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur)}
 .mbox.real{border-color:var(--green);border-width:2px}
 .mbox.final{border-color:var(--gold);border-width:2px}
@@ -175,7 +187,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}
 .front .stars{color:var(--tint);font-size:11px}
 .front .cc{font-size:10px;font-weight:bold;opacity:.85}
 .front .pho{width:74px;height:74px;border-radius:50%;object-fit:cover;margin:4px 0;
-  border:3px solid #fff;outline:2px solid var(--edge);background:#fff}
+  border:3px solid #fff;outline:2px solid var(--edge);background:#dfe5f0}
 .front .pho.ph{display:flex;align-items:center;justify-content:center;
   font-family:"Bahnschrift SemiBold Condensed";font-size:24px;color:#16203a}
 .front .nm{font-weight:bold;font-size:16px;text-align:center;line-height:1}
@@ -218,17 +230,21 @@ table{width:100%;border-collapse:collapse;font-size:13px}
 /* ---------- Responsive (celular) ---------- */
 @media (max-width:640px){
   .toolbar,.tabs,.tabwrap{padding-left:8px;padding-right:8px}
-  .toolbar{gap:6px} .btn{padding:9px 12px;font-size:12px}
+  .toolbar{gap:6px;justify-content:flex-start}
+  .btn{padding:10px 12px;font-size:12px;min-height:44px}
+  .themesel{margin-left:0;flex-wrap:wrap}
+  .themesel .tbtn{min-height:38px}
   .status{flex-basis:100%;margin-left:0;order:5}
   .tabs{gap:6px;overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch}
-  .pill{padding:7px 12px;font-size:12px;white-space:nowrap}
+  .pill{padding:8px 14px;font-size:12px;white-space:nowrap;min-height:40px}
   .grid-groups{grid-template-columns:1fr;gap:10px}
-  .cards{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
-  .mrow{font-size:13px} .mrow input{width:32px;padding:5px}
+  .cards{grid-template-columns:repeat(2,1fr);gap:10px}
+  .mrow{font-size:13px} .mrow input{width:38px;min-height:38px;padding:6px}
   .mrow .t1,.mrow .t2{font-size:12px}
   .panel h2{font-size:16px}
   .rank,.stand{font-size:12px}
-  .bracket-scroll{max-height:70vh}
+  .bracket-scroll{max-height:68vh}
+  .panel.narrow{max-width:100%}
 }
 </style>
 </head>
@@ -506,7 +522,7 @@ function renderTerceros(rank){
       <td class="center">${e.pj}</td><td class="center">${e.dg>=0?"+":""}${e.dg}</td>
       <td class="center">${e.gf}</td><td class="center"><b>${e.pts}</b></td>
       <td class="center">${est}</td></tr>`;}).join("");
-  document.getElementById("tab-terceros").innerHTML=`<div class="panel">
+  document.getElementById("tab-terceros").innerHTML=`<div class="panel narrow">
     <div class="acc" style="background:var(--gold)"></div>
     <h2>RANKING DE TERCEROS — LOS 8 MEJORES CLASIFICAN</h2>
     <div class="pbody"><table class="rank"><thead><tr><th>EQUIPO (GR)</th><th class="center">PJ</th>
@@ -518,7 +534,7 @@ function renderTerceros(rank){
 const LEFT_LEAF=[73,75,74,77,83,84,81,82], RIGHT_LEAF=[76,78,79,80,86,88,85,87];
 const LEFT_SET=new Set([...LEFT_LEAF,89,90,93,94,97,98,101]);
 function renderCuadro(){
-  const cw=184,ch=60,gap=22,pitch=214,x0=20,y0=44;
+  const cw=156,ch=58,gap=18,pitch=186,x0=16,y0=44;
   const xFinal=x0+4*pitch;
   const feeders={};for(const[n,[a,b]]of Object.entries(LLAVES))feeders[n]=[+a.slice(1),+b.slice(1)];
   const posy={};
@@ -694,11 +710,11 @@ function renderStats(){
         <div class="hint">ORO 5+ goles · PLATA 3-4 · BRONCE 1-2 · clic para ver el dorso ↺ ${spinnerTxt()}</div>
         <div class="cards ${ESTILO}">${cards||"(Sin goles aún)"}</div>
       </div></div>
-    <div class="panel"><div class="acc" style="background:var(--blue)"></div>
+    <div class="panel narrow"><div class="acc" style="background:var(--blue)"></div>
       <h2>RANKING FIFA</h2><div class="psub">Posición mundial (al 11/06/2026)</div>
       <div class="pbody"><table class="rank"><thead><tr><th>SELECCIÓN</th><th class="center">FIFA</th></tr></thead>
       <tbody>${fifaRows}</tbody></table></div></div>
-    <div class="panel"><div class="acc" style="background:var(--gold)"></div>
+    <div class="panel narrow"><div class="acc" style="background:var(--gold)"></div>
       <h2>RÉCORDS DEL TORNEO</h2>
       <div class="pbody"><table class="rank"><tbody>${recRows}</tbody></table></div></div>`;
 }
@@ -762,7 +778,7 @@ window.addEventListener("resize",bannerLines);
 
 /* ---------- Temas ---------- */
 const THEMES_UI=[["airy","Claro"],["glass","Oscuro"],["bold","Vibrante"]];
-let THEME=localStorage.getItem("wc26theme")||"airy";
+let THEME=localStorage.getItem("wc26theme")||"glass";
 function applyTheme(){
   if(THEME==="airy")document.body.removeAttribute("data-theme");
   else document.body.setAttribute("data-theme",THEME);
