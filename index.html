@@ -29,7 +29,7 @@ body[data-theme="glass"]{
   --radius:18px; --blur:saturate(140%) blur(12px);
   --shadow:0 12px 36px rgba(0,0,0,.5); --shadow-sm:0 4px 16px rgba(0,0,0,.4);
 }
-body[data-theme="glass"] .qual-soft{}
+body[data-theme="glass"] .stand th,body[data-theme="glass"] .rank th{color:#c7d3ec}
 /* === VIBRANTE / EDITORIAL === */
 body[data-theme="bold"]{
   --page-bg:#eef1f8; --panel-bg:#ffffff; --radius:14px; --banner-lines:.25;
@@ -185,26 +185,27 @@ table{width:100%;border-collapse:collapse;font-size:13px}
 .fig.tilt .face::after{opacity:.85}
 .back{transform:rotateY(180deg)}
 /* tiers */
-.t-oro{--edge:#8a5a00;--tint:#ee9b00;--band:#ffd66b;--g1:#fff3c0;--gm:#eec23a;--g2:#a9780a}
-.t-plata{--edge:#828ba3;--tint:#aeb8c8;--band:#d7dee9;--g1:#ffffff;--gm:#d2dbe9;--g2:#929db6}
-.t-bronce{--edge:#8e5e34;--tint:#b56a32;--band:#e6a15c;--g1:#f6dcb6;--gm:#cf9b5f;--g2:#8a5a32}
+.t-oro{--edge:#8a5a00;--tint:#ee9b00;--band:#ffd66b;
+  --metal:linear-gradient(135deg,#9a6c08 0%,#ffe79a 15%,#c98f1a 33%,#fff6cf 50%,#caa01f 67%,#ffe79a 84%,#8a5a00 100%)}
+.t-plata{--edge:#828ba3;--tint:#aeb8c8;--band:#d7dee9;
+  --metal:linear-gradient(135deg,#7f889e 0%,#ffffff 15%,#b3bdcf 33%,#f4f7fc 50%,#9aa6bd 67%,#ffffff 84%,#7f889e 100%)}
+.t-bronce{--edge:#8e5e34;--tint:#b56a32;--band:#e6a15c;
+  --metal:linear-gradient(135deg,#6b3517 0%,#f0c29a 15%,#a5693a 33%,#f6dcb6 50%,#9c6336 67%,#e6a15c 84%,#6b3517 100%)}
 /* FRENTE */
 .front{display:flex;flex-direction:column;align-items:center;padding:8px;color:#16203a}
-/* metalizado + holografico */
+/* metalizado (bandas claro/oscuro) + holografico */
 .spotlight .front{
   background:
-    repeating-linear-gradient(110deg,rgba(255,0,150,.10) 0 9px,rgba(0,230,255,.10) 9px 18px,rgba(120,90,255,.10) 18px 27px,rgba(255,210,0,.10) 27px 36px),
-    linear-gradient(125deg,rgba(255,255,255,.6),transparent 24%,transparent 76%,rgba(255,255,255,.5)),
-    radial-gradient(circle at 50% 38%,rgba(255,255,255,.92),transparent 55%),
-    linear-gradient(160deg,var(--g1),var(--gm) 52%,var(--g2));
-  background-blend-mode:color-dodge,screen,normal,normal}
+    repeating-linear-gradient(110deg,rgba(255,0,150,.13) 0 8px,rgba(0,230,255,.13) 8px 16px,rgba(120,90,255,.13) 16px 24px,rgba(255,210,0,.13) 24px 32px),
+    radial-gradient(circle at 50% 28%,rgba(255,255,255,.5),transparent 46%),
+    var(--metal);
+  background-blend-mode:overlay,soft-light,normal}
 .spotlight .fig.top3 .front{
   background:
-    repeating-conic-gradient(from 0deg at 50% 38%,var(--tint) 0 4deg,transparent 4deg 15deg),
-    repeating-linear-gradient(110deg,rgba(255,0,150,.12) 0 9px,rgba(0,230,255,.12) 9px 18px,rgba(120,90,255,.12) 18px 27px,rgba(255,210,0,.12) 27px 36px),
-    radial-gradient(circle at 50% 38%,rgba(255,255,255,.9),transparent 52%),
-    linear-gradient(160deg,var(--g1),var(--gm) 52%,var(--g2));
-  background-blend-mode:overlay,color-dodge,normal,normal}
+    repeating-conic-gradient(from 0deg at 50% 30%,rgba(255,255,255,.28) 0 3deg,transparent 3deg 13deg),
+    repeating-linear-gradient(110deg,rgba(255,0,150,.16) 0 8px,rgba(0,230,255,.16) 8px 16px,rgba(120,90,255,.16) 16px 24px,rgba(255,210,0,.16) 24px 32px),
+    var(--metal);
+  background-blend-mode:soft-light,overlay,normal}
 .sticker .front{background:linear-gradient(#fff,#e8ebf1)}
 .hud .front{background:
   repeating-linear-gradient(0deg,rgba(255,255,255,.06) 0 1px,transparent 1px 22px),
@@ -255,7 +256,9 @@ table{width:100%;border-collapse:collapse;font-size:13px}
 .themesel .tbtn{border:1px solid var(--line2);background:var(--pill-bg);color:var(--muted);
   border-radius:20px;padding:6px 12px;font-size:12px;font-weight:bold}
 .themesel .tbtn.on{background:var(--blue);color:#fff;border-color:transparent;box-shadow:var(--shadow-sm)}
-.fig{transition:transform .15s} .fig:hover{transform:translateY(-4px)}
+.fig{transition:transform .15s;content-visibility:auto;contain-intrinsic-size:auto 232px}
+.fig:hover{transform:translateY(-4px)}
+.fig:hover .fig-in{will-change:transform}
 
 /* ---------- Responsive (celular) ---------- */
 @media (max-width:640px){
@@ -263,13 +266,14 @@ table{width:100%;border-collapse:collapse;font-size:13px}
   .toolbar{gap:6px;justify-content:flex-start}
   .btn{padding:10px 12px;font-size:12px;min-height:44px}
   .themesel{margin-left:0;flex-wrap:wrap}
-  .themesel .tbtn{min-height:38px}
+  .themesel .tbtn{min-height:44px}
   .status{flex-basis:100%;margin-left:0;order:5}
   .tabs{gap:6px;overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch}
-  .pill{padding:8px 14px;font-size:12px;white-space:nowrap;min-height:40px}
+  .pill{padding:8px 14px;font-size:12px;white-space:nowrap;min-height:44px}
   .grid-groups{grid-template-columns:1fr;gap:10px}
   .cards{grid-template-columns:repeat(2,1fr);gap:10px}
-  .mrow{font-size:13px} .mrow input{width:38px;min-height:38px;padding:6px}
+  /* 16px frena el auto-zoom de iOS al enfocar el input */
+  .mrow{font-size:13px} .mrow input{width:44px;min-height:44px;padding:6px;font-size:16px}
   .mrow .t1,.mrow .t2{font-size:12px}
   .panel h2{font-size:16px}
   .rank,.stand{font-size:12px}
@@ -301,14 +305,14 @@ table{width:100%;border-collapse:collapse;font-size:13px}
   <div class="themesel" id="themesel"></div>
   <span class="status" id="status"></span>
 </div>
-<div class="tabs" id="tabs"></div>
+<div class="tabs" id="tabs" role="tablist" aria-label="Secciones"></div>
 <div class="tabwrap">
   <div class="hint">Tip: editá cualquier marcador (real o futuro) y tocá RECALCULAR. En el cuadro, hacé clic en un equipo para hacerlo ganar. En Estadísticas, clic en una figurita para ver el dorso.</div>
-  <div class="tabpage show" id="tab-grupos"></div>
-  <div class="tabpage" id="tab-terceros"></div>
-  <div class="tabpage" id="tab-cuadro"></div>
-  <div class="tabpage" id="tab-fifa"></div>
-  <div class="tabpage" id="tab-stats"></div>
+  <div class="tabpage show" id="tab-grupos" role="tabpanel"></div>
+  <div class="tabpage" id="tab-terceros" role="tabpanel"></div>
+  <div class="tabpage" id="tab-cuadro" role="tabpanel"></div>
+  <div class="tabpage" id="tab-fifa" role="tabpanel"></div>
+  <div class="tabpage" id="tab-stats" role="tabpanel"></div>
 </div>
 
 <script>
@@ -390,7 +394,7 @@ let FSORT="fifa", FDIR=1, FFILTER="all";
 
 /* ============================ UTILS ============================ */
 const flagUrl=t=>ISO[t]?`https://flagcdn.com/w40/${ISO[t]}.png`:"";
-const flagImg=t=>ISO[t]?`<img class="flag" src="${flagUrl(t)}" alt="">`:"";
+const flagImg=t=>ISO[t]?`<img class="flag" src="${flagUrl(t)}" alt="" width="20" height="13" loading="lazy" decoding="async">`:"";
 const cc=t=>{const c=ISO[t]||"";return c.split("-").pop().toUpperCase();};
 const esEtiqueta=n=>!n||/^[123][A-Z]?$/.test(n)||/^(W|L|Gan|Perd|3:)/.test(n)||n.includes("/")||n.includes("?")||n.startsWith("Gan.")||n.startsWith("Perd.");
 const corto=(s,n)=>!s?s:(s.length<=n?s:s.slice(0,n-1)+".");
@@ -711,7 +715,7 @@ function figHtml(p,i){
   const photo=PHOTOS[p.n];
   const ini=esc((p.n.split(/[\s.\-]+/).filter(Boolean).map(w=>w[0]).slice(0,2).join("")||"?").toUpperCase());
   const av=`<div class="phwrap"><div class="pho ph">${ini}</div>${
-    photo?`<img class="pho" src="${photo}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`:""}</div>`;
+    photo?`<img class="pho" src="${photo}" alt="" width="74" height="74" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">`:""}</div>`;
   const stars={oro:"★★★",plata:"★★",bronce:"★"}[tier];
   // front
   const front=`<div class="face front">
@@ -870,12 +874,13 @@ const TABDEF=[["grupos","FASE DE GRUPOS","#1e6bff"],["terceros","MEJORES TERCERO
   ["stats","ESTADÍSTICAS","#e5103b"]];
 function renderTabs(){
   document.getElementById("tabs").innerHTML=TABDEF.map(([k,t,c],i)=>
-    `<div class="pill ${i===0?"active":""}" id="pill-${k}" style="${i===0?"background:"+c:""}"
-      onclick="tab('${k}','${c}')">${t}</div>`).join("");
+    `<button class="pill ${i===0?"active":""}" id="pill-${k}" role="tab" aria-selected="${i===0}"
+      aria-controls="tab-${k}" style="${i===0?"background:"+c:""}"
+      onclick="tab('${k}','${c}')">${t}</button>`).join("");
 }
 function tab(k,c){
-  document.querySelectorAll(".pill").forEach(p=>{p.classList.remove("active");p.style.background="";});
-  const pl=document.getElementById("pill-"+k);pl.classList.add("active");pl.style.background=c;
+  document.querySelectorAll(".pill").forEach(p=>{p.classList.remove("active");p.style.background="";p.setAttribute("aria-selected","false");});
+  const pl=document.getElementById("pill-"+k);pl.classList.add("active");pl.style.background=c;pl.setAttribute("aria-selected","true");
   document.querySelectorAll(".tabpage").forEach(p=>p.classList.remove("show"));
   document.getElementById("tab-"+k).classList.add("show");
 }
