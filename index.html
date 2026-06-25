@@ -807,16 +807,15 @@ function renderFifa(){
       <th class="sortable" onclick="setFifaSort('forma')">FORMA 2026${arrow('forma')}</th>
     </tr></thead><tbody>${rows}</tbody></table></div></div></div>`;
 }
-/* ---------- Calendario ---------- */
-function diaTxt(date){const[y,mo,da]=date.split("-").map(Number);
-  return new Date(y,mo-1,da).toLocaleDateString("es-ES",{weekday:"long",day:"numeric",month:"long"}).toUpperCase();}
-function horaSede(time){const m=/(\d{1,2}:\d{2})/.exec(time||"");return m?m[1]:"";}
-function horaLocal(date,time){
+/* ---------- Calendario (hora local) ---------- */
+function localDate(date,time){
   const m=/(\d{1,2}):(\d{2})/.exec(time||""),off=/UTC([+-]\d+)/.exec(time||"");
-  if(!m||!off||!date)return "";
+  if(!m||!off||!date)return null;
   const[y,mo,da]=date.split("-").map(Number);
-  const d=new Date(Date.UTC(y,mo-1,da,(+m[1])-(+off[1]),+m[2]));
-  return d.toLocaleString("es-ES",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});}
+  return new Date(Date.UTC(y,mo-1,da,(+m[1])-(+off[1]),+m[2]));}
+function diaTxtD(d){return d.toLocaleDateString("es-ES",{weekday:"long",day:"numeric",month:"long"}).toUpperCase();}
+function hmD(d){return d.toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"});}
+function horaSede(time){const m=/(\d{1,2}:\d{2})/.exec(time||"");return m?m[1]:"";}
 function rondaTxt(x){
   if(x.group)return x.group.replace("Group ","Gr ");
   const R={"Round of 32":"16avos","Round of 16":"Octavos","Quarter-finals":"Cuartos",
@@ -830,22 +829,25 @@ function renderCalendario(){
     if(CALFILT==="prox")return !ft; if(CALFILT==="jug")return !!ft; return true;});
   let rows="",lastDay="";
   for(const x of fil){
-    if(x.date!==lastDay){lastDay=x.date;rows+=`<tr class="dsep"><td colspan="4">${diaTxt(x.date)}</td></tr>`;}
+    const d=localDate(x.date,x.time);
+    const dayKey=d?d.toDateString():x.date;
+    if(dayKey!==lastDay){lastDay=dayKey;
+      rows+=`<tr class="dsep"><td colspan="3">${d?diaTxtD(d):x.date}</td></tr>`;}
     const ft=(x.score||{}).ft;
     const mid=ft?`<span class="res">${ft[0]} - ${ft[1]}</span>`:`<span class="vs">vs</span>`;
     const part=`<span class="tagr">${esc(rondaTxt(x))}</span>${flagImg(x.team1)} ${esc(corto(x.team1,15))} ${mid} ${esc(corto(x.team2,15))} ${flagImg(x.team2)}`;
-    rows+=`<tr><td class="hora">${horaSede(x.time)}</td><td class="pt">${part}</td>`+
-      `<td class="sede">${esc(x.ground||"")}</td><td class="tu">${horaLocal(x.date,x.time)}</td></tr>`;
+    rows+=`<tr><td class="hora">${d?hmD(d):horaSede(x.time)}</td><td class="pt">${part}</td>`+
+      `<td class="sede">${esc(x.ground||"")}</td></tr>`;
   }
   const chips=[["all","Todos"],["prox","Próximos"],["jug","Jugados"]].map(([k,d])=>
     `<button class="fbtn ${CALFILT===k?'on':''}" onclick="setCalFilter('${k}')">${d}</button>`).join("");
   document.getElementById("tab-calendario").innerHTML=`<div class="panel">
     <div class="acc" style="background:#8b5cf6"></div>
     <h2>CALENDARIO</h2>
-    <div class="psub">Hora de la sede y tu hora local · ${fil.length} partidos</div>
+    <div class="psub">Horarios en tu hora local · ${fil.length} partidos</div>
     <div class="pbody"><div class="fbar">${chips}</div>
     <div class="ftwrap"><table class="rank cal"><thead><tr>
-      <th>HORA</th><th>PARTIDO</th><th>SEDE</th><th>TU HORA</th></tr></thead>
+      <th>HORA</th><th>PARTIDO</th><th>SEDE</th></tr></thead>
       <tbody>${rows}</tbody></table></div></div></div>`;
 }
 function flip(id){FLIP[id]=!FLIP[id];const el=document.getElementById(id);
