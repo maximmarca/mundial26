@@ -81,7 +81,7 @@ button{font-family:inherit;cursor:pointer}
 .toolbar{display:flex;gap:8px;align-items:center;padding:10px 14px;flex-wrap:wrap}
 .btn{border:0;border-radius:10px;padding:10px 16px;color:#fff;font-weight:bold;font-size:13px;
   transition:all .15s ease;box-shadow:var(--shadow-sm)}
-.btn.blue{background:var(--blue)} .btn.green{background:var(--green)}
+.btn.blue{background:var(--blue)} .btn.green{background:var(--green)} .btn.sim{background:#8b5cf6}
 .btn.ghost{background:var(--panel-bg);color:var(--text);border:1px solid var(--line)}
 .btn:hover{filter:brightness(.97);transform:translateY(-1px);box-shadow:var(--shadow)}
 .btn:active{transform:translateY(0)}
@@ -343,6 +343,7 @@ select.search{max-width:240px;cursor:pointer}
 <div class="toolbar">
   <button class="btn blue" onclick="actualizar()">ACTUALIZAR</button>
   <button class="btn green" onclick="recalcular()">RECALCULAR</button>
+  <button class="btn sim" onclick="simularTodo()">⚽ SIMULAR TODO</button>
   <button class="btn ghost" onclick="restaurar()">RESTAURAR REALES</button>
   <div class="themesel" id="themesel"></div>
   <span class="status" id="status"></span>
@@ -577,6 +578,45 @@ function recalcular(){
   renderFifa();
 }
 function restaurar(){RES={...REAL};SCORES={...REAL};KOWIN={...KOREAL};renderGrupos();recalcular();}
+
+/* ---------- Simular todo (segun fuerza: FIFA + historicos + forma) ---------- */
+function _fuerza(t,ST){
+  let s=100-(RANKING_FIFA[t]||80);              // ranking FIFA (principal)
+  const i=TEAMINFO[t]||["?",0,0,0];
+  s+=i[1]*6+Math.min(i[3],10)*0.6;              // titulos + experiencia (historico)
+  const st=ST&&ST[t]; if(st&&st.pj)s+=st.pts*2+st.dg;  // forma actual del torneo
+  return Math.max(8,s);
+}
+function _poisson(l){const L=Math.exp(-l);let k=0,p=1;do{k++;p*=Math.random();}while(p>L);return Math.min(k-1,6);}
+function _simScore(fA,fB){const pa=fA/(fA+fB);return [_poisson(0.5+2.6*pa),_poisson(0.5+2.6*(1-pa))];}
+function _pickWin(t1,t2,ST){const fA=_fuerza(t1,ST),fB=_fuerza(t2,ST);return Math.random()<fA/(fA+fB)?t1:t2;}
+function simularTodo(){
+  if(!DATA)return;
+  const ST=statsTorneo();
+  // 1) grupos: completar los NO jugados (respeta reales)
+  for(const m of GM){
+    if(REAL[m.id])continue;
+    const r=_simScore(_fuerza(m.t1,ST),_fuerza(m.t2,ST));
+    SCORES[m.id]=r;
+    const i1=document.getElementById("s_"+m.id+"_1"),i2=document.getElementById("s_"+m.id+"_2");
+    if(i1)i1.value=""+r[0]; if(i2)i2.value=""+r[1];
+  }
+  recalcular();   // tablas, terceros, R32 y render
+  // 2) eliminatoria: ganadores ronda por ronda (respeta KO reales)
+  const rondas=[Array.from({length:16},(_,i)=>73+i),[89,90,91,92,93,94,95,96],
+                [97,98,99,100],[101,102],[103,104]];
+  for(const grp of rondas){
+    for(const n of grp){
+      if(n in KOREAL)continue;
+      const par=KORES[n]; if(!par)continue;
+      const t1=par[0],t2=par[1];
+      if(esEtiqueta(t1)||esEtiqueta(t2))continue;
+      KOWIN[n]=_pickWin(t1,t2,ST);
+    }
+    resolverCuadro();
+  }
+  renderCuadro(); renderFifa();
+}
 
 /* ============================ RENDER GRUPOS ============================ */
 const ACENTOS=["#1e6bff","#e5103b","#00b86b","#00b8d4","#ee9b00","#8b5cf6"];
