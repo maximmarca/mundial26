@@ -191,8 +191,13 @@ select.search{max-width:240px;cursor:pointer}
 .champ{position:absolute;width:200px;background:#fff7dd;border:3px solid var(--gold);
   border-radius:16px;text-align:center;padding:8px}
 .champ .hd{background:var(--gold);color:#fff;border-radius:8px;padding:3px;font-size:12px;font-weight:bold}
-.champ .cup{font-size:52px;line-height:1}
+.champ .cup{line-height:1}
+.champ .cup svg{display:block;margin:0 auto;filter:drop-shadow(0 3px 4px rgba(0,0,0,.3))}
 .champ .nm{font-size:18px;font-weight:bold}
+.champ.bronze{background:#f6e7d4;border-color:#8a5a32}
+.champ.bronze .hd{background:#8a5a32}
+.champ.sm{width:174px}
+.tro svg{vertical-align:middle;filter:drop-shadow(0 2px 2px rgba(0,0,0,.25))}
 .acc-round{margin:8px 0;border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .acc-round>summary{cursor:pointer;font-weight:bold;padding:11px 12px;background:var(--th-bg);list-style:none}
 .acc-round>summary::-webkit-details-marker{display:none}
@@ -637,11 +642,15 @@ function mboxmHTML(n){
 function renderCuadroMobile(){
   const RM=[["DIECISEISAVOS",Array.from({length:16},(_,i)=>73+i)],["OCTAVOS",[89,90,91,92,93,94,95,96]],
     ["CUARTOS",[97,98,99,100]],["SEMIS",[101,102]],["3ER PUESTO",[103]],["FINAL",[104]]];
-  let h="";const champ=KOWIN[104];
+  let h="";const champ=KOWIN[104],w3m=KOWIN[103];
   if(champ&&!esEtiqueta(champ))
     h+=`<div class="champ" style="position:static;width:auto;margin:0 0 12px">
-      <div class="hd">CAMPEÓN DEL MUNDO</div><div class="cup">🏆</div>
+      <div class="hd">CAMPEÓN DEL MUNDO</div><div class="cup">${trofeoSVG("mundial",60)}</div>
       <div class="nm">${flagImg(champ)} ${esc(corto(champ,18))}</div></div>`;
+  if(w3m&&!esEtiqueta(w3m))
+    h+=`<div class="champ bronze" style="position:static;width:auto;margin:0 0 12px">
+      <div class="hd">3.º PUESTO</div><div class="cup">${trofeoSVG("bronce",44)}</div>
+      <div class="nm">${flagImg(w3m)} ${esc(corto(w3m,18))}</div></div>`;
   for(const[nm,nums]of RM)
     h+=`<details class="acc-round" open><summary>${nm}</summary>${nums.map(mboxmHTML).join("")}</details>`;
   document.getElementById("tab-cuadro").innerHTML=`<div class="panel"><div class="acc" style="background:var(--green)"></div>
@@ -661,7 +670,7 @@ function renderCuadro(){
   const xpos=n=>{if(n===104||n===103)return xFinal;
     return LEFT_SET.has(n)?x0+COL[n]*pitch:x0+(8-COL[n])*pitch;};
   const totalW=x0+8*pitch+cw+30;
-  const totalH=Math.max(y0+8*(ch+gap)+40, posy[104]+150+ch);
+  const totalH=Math.max(y0+8*(ch+gap)+40, posy[104]+340);
   // conectores (llaves) hacia el centro desde ambos lados
   let svg="";
   for(const n of Object.keys(LLAVES).map(Number)){if(n===103)continue;
@@ -685,9 +694,15 @@ function renderCuadro(){
   boxes+=boxHtml(103,xFinal,ty);
   const champ=KOWIN[104];
   if(champ&&!esEtiqueta(champ)){
-    boxes+=`<div class="champ" style="left:${xFinal-8}px;top:${posy[104]-160}px">
-      <div class="hd">CAMPEÓN DEL MUNDO</div><div class="cup">🏆</div>
+    boxes+=`<div class="champ" style="left:${xFinal-8}px;top:${posy[104]-170}px">
+      <div class="hd">CAMPEÓN DEL MUNDO</div><div class="cup">${trofeoSVG("mundial",64)}</div>
       <div class="nm">${flagImg(champ)} ${esc(corto(champ,16))}</div></div>`;
+  }
+  const w3=KOWIN[103];
+  if(w3&&!esEtiqueta(w3)){
+    boxes+=`<div class="champ bronze sm" style="left:${xFinal-2}px;top:${ty+ch+20}px">
+      <div class="hd">3.º PUESTO</div><div class="cup">${trofeoSVG("bronce",40)}</div>
+      <div class="nm">${flagImg(w3)} ${esc(corto(w3,16))}</div></div>`;
   }
   const sc=document.getElementById("tab-cuadro");
   const prev=sc.querySelector(".bracket-scroll");
@@ -783,6 +798,22 @@ function patSVG(th){
   else {g=`<rect width="${W}" height="${H}" fill="${p}"/>`;for(let x=-H;x<W;x+=14)g+=`<line x1="${x}" y1="${H}" x2="${x+H}" y2="0" stroke="${a}" stroke-width="4"/>`;}
   const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice">${g}</svg>`;
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+}
+function trofeoSVG(kind,size){
+  const M={mundial:["#fff3c0","#f0c63a","#a9780a","g"],plata:["#ffffff","#cdd6e6","#8a93a8","s"],
+           bronce:["#f6dcb6","#cf9b5f","#6b3517","b"]};
+  const G=M[kind]||M.mundial,id="tr"+G[3],big=kind==="mundial",s=size||50;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 112" width="${s}" height="${Math.round(s*1.12)}" aria-hidden="true">
+    <defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="${G[0]}"/><stop offset=".5" stop-color="${G[1]}"/><stop offset="1" stop-color="${G[2]}"/></linearGradient></defs>
+    <path d="M30 24 C7 24 7 55 33 55" fill="none" stroke="url(#${id})" stroke-width="6"/>
+    <path d="M70 24 C93 24 93 55 67 55" fill="none" stroke="url(#${id})" stroke-width="6"/>
+    <path d="M27 18 H73 Q73 58 50 66 Q27 58 27 18 Z" fill="url(#${id})" stroke="${G[2]}" stroke-width="1.5"/>
+    <rect x="45" y="65" width="10" height="14" fill="url(#${id})"/>
+    <rect x="33" y="79" width="34" height="7" rx="2" fill="url(#${id})"/>
+    <rect x="26" y="87" width="48" height="10" rx="3" fill="url(#${id})" stroke="${G[2]}" stroke-width="1"/>
+    ${big?`<polygon points="${_star(50,38,13,5.5)}" fill="rgba(255,255,255,.55)"/>`:""}
+  </svg>`;
 }
 function figHtml(p,i){
   const tier=tierDe(p.g),rt=rating(p.g,p.p),top3=i<3,id="fig"+i;
@@ -1083,7 +1114,9 @@ function applyTheme(){
 function setTheme(t){THEME=t;localStorage.setItem("wc26theme2",t);applyTheme();}
 
 /* ============================ INIT ============================ */
-renderTabs();applyTheme();bannerLines();initParallax();cargar(false);
+renderTabs();applyTheme();bannerLines();initParallax();
+document.querySelectorAll(".tro").forEach(s=>s.innerHTML=trofeoSVG("mundial",24));
+cargar(false);
 </script>
 </body>
 </html>
