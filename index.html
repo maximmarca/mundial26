@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Fixture Mundial 2026</title>
+<meta name="theme-color" content="#1e6bff">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
 <style>
 :root{
   --bg:#edf1f8; --bg2:#f6f8fc; --card:#fff; --line:#e2e7f1; --line2:#cbd3e4;
@@ -68,6 +71,11 @@ button{font-family:inherit;cursor:pointer}
 .banner .bar{display:flex;gap:6px;margin-top:4px}
 .banner .bar span{width:clamp(34px,11vw,70px);height:5px;border-radius:2px}
 .banner .sub{color:var(--muted);font-size:clamp(9px,2.6vw,13px);letter-spacing:1.5px;white-space:nowrap}
+.banner .title,.banner .lines{transition:transform .12s ease}
+@media (min-width:641px) and (max-width:1024px){
+  .tabwrap{padding-left:10px;padding-right:10px}
+  .grid-groups{grid-template-columns:repeat(2,1fr)}
+}
 
 /* ---------- Toolbar / tabs ---------- */
 .toolbar{display:flex;gap:8px;align-items:center;padding:10px 14px;flex-wrap:wrap}
@@ -148,6 +156,14 @@ table{width:100%;border-collapse:collapse;font-size:13px}
 .fbtn{border:1px solid var(--line2);background:var(--pill-bg);color:var(--muted);border-radius:20px;
   padding:5px 12px;font-size:12px;font-weight:bold}
 .fbtn.on{background:var(--blue);color:#fff;border-color:transparent}
+.search{width:100%;max-width:320px;padding:9px 12px;border:1px solid var(--line2);border-radius:10px;
+  background:var(--input-bg);color:var(--text);font-family:inherit;margin-bottom:10px}
+.search:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(30,107,255,.18)}
+.champrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px;font-size:12px;
+  color:var(--muted);font-weight:bold}
+.champ-chip{display:inline-flex;align-items:center;gap:5px;background:var(--th-bg);border-radius:20px;
+  padding:3px 10px;color:var(--text)}
+select.search{max-width:240px;cursor:pointer}
 .cal td{padding:7px 8px;vertical-align:middle}
 .cal .dsep td{background:var(--th-bg);color:var(--muted);font-weight:bold;font-size:12px;
   letter-spacing:.04em;padding:8px}
@@ -179,6 +195,18 @@ table{width:100%;border-collapse:collapse;font-size:13px}
 .champ .hd{background:var(--gold);color:#fff;border-radius:8px;padding:3px;font-size:12px;font-weight:bold}
 .champ .cup{font-size:52px;line-height:1}
 .champ .nm{font-size:18px;font-weight:bold}
+.acc-round{margin:8px 0;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.acc-round>summary{cursor:pointer;font-weight:bold;padding:11px 12px;background:var(--th-bg);list-style:none}
+.acc-round>summary::-webkit-details-marker{display:none}
+.acc-round>summary::before{content:"▸ ";color:var(--muted)}
+.acc-round[open]>summary::before{content:"▾ "}
+.mboxm{background:var(--panel-bg);border:1px solid var(--line);border-radius:10px;margin:8px;box-shadow:var(--shadow-sm)}
+.mboxm.real{border-color:var(--green)} .mboxm.final{border-color:var(--gold);border-width:2px}
+.mboxm .cab{font-size:9px;color:var(--muted);padding:4px 10px 0}
+.rowm{display:flex;align-items:center;gap:8px;padding:10px;font-size:14px;border-radius:6px;margin:2px 4px}
+.rowm.clic{cursor:pointer} .rowm.clic:active{background:var(--hover)}
+.rowm.win{background:var(--green);color:#fff;font-weight:bold}
+.rowm span{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* ---------- Figuritas ---------- */
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:14px}
@@ -381,28 +409,28 @@ const TEAMINFO={
 "Qatar":["AFC",0,0,2],"Iraq":["AFC",0,0,2],"Saudi Arabia":["AFC",0,0,7],"Jordan":["AFC",0,0,1],
 "Uzbekistan":["AFC",0,0,1],"New Zealand":["OFC",0,0,3]};
 const THEMES={
-"ar":{pri:"#75AADB",sec:"#FFFFFF",acc:"#F6B40E",dark:"#1B3A57"},
-"fr":{pri:"#0055A4",sec:"#FFFFFF",acc:"#EF4135",dark:"#102A56"},
-"de":{pri:"#222",sec:"#DD0000",acc:"#FFCE00",dark:"#111"},
-"no":{pri:"#BA0C2F",sec:"#FFFFFF",acc:"#00205B",dark:"#071A3A"},
-"ca":{pri:"#D80621",sec:"#FFFFFF",acc:"#B00020",dark:"#4A0A12"},
-"gb-eng":{pri:"#FFFFFF",sec:"#CF142B",acc:"#102A56",dark:"#172033"},
-"jp":{pri:"#FFFFFF",sec:"#BC002D",acc:"#E60033",dark:"#2A2A2A"},
-"nl":{pri:"#FF7A00",sec:"#FFFFFF",acc:"#21468B",dark:"#102A56"},
-"us":{pri:"#3C3B6E",sec:"#FFFFFF",acc:"#B22234",dark:"#101827"},
-"ma":{pri:"#C1272D",sec:"#006233",acc:"#E8D8A8",dark:"#3A0E12"},
-"sn":{pri:"#00853F",sec:"#FDEF42",acc:"#E31B23",dark:"#113D25"},
-"ch":{pri:"#D52B1E",sec:"#FFFFFF",acc:"#B71C1C",dark:"#4B1111"},
-"es":{pri:"#AA151B",sec:"#F1BF00",acc:"#AA151B",dark:"#4A0A0E"},
-"br":{pri:"#009C3B",sec:"#FFDF00",acc:"#002776",dark:"#063B1E"},
-"pt":{pri:"#006600",sec:"#FF0000",acc:"#FFD700",dark:"#0A2A0A"},
-"be":{pri:"#222",sec:"#FDDA24",acc:"#EF3340",dark:"#111"}};
-const DEF_THEME={pri:"#3a567a",sec:"#ffffff",acc:"#2ba4ff",dark:"#152238"};
+"ar":{pri:"#75AADB",sec:"#FFFFFF",acc:"#F6B40E",dark:"#1B3A57",pat:"sun"},
+"fr":{pri:"#0055A4",sec:"#FFFFFF",acc:"#EF4135",dark:"#102A56",pat:"vtri"},
+"de":{pri:"#222",sec:"#DD0000",acc:"#FFCE00",dark:"#111",pat:"htri"},
+"no":{pri:"#BA0C2F",sec:"#FFFFFF",acc:"#00205B",dark:"#071A3A",pat:"nordic"},
+"ca":{pri:"#D80621",sec:"#FFFFFF",acc:"#B00020",dark:"#4A0A12",pat:"side"},
+"gb-eng":{pri:"#FFFFFF",sec:"#CF142B",acc:"#102A56",dark:"#172033",pat:"george"},
+"jp":{pri:"#FFFFFF",sec:"#BC002D",acc:"#E60033",dark:"#2A2A2A",pat:"rising"},
+"nl":{pri:"#FF7A00",sec:"#FFFFFF",acc:"#21468B",dark:"#102A56",pat:"owave"},
+"us":{pri:"#3C3B6E",sec:"#FFFFFF",acc:"#B22234",dark:"#101827",pat:"stars"},
+"ma":{pri:"#C1272D",sec:"#006233",acc:"#E8D8A8",dark:"#3A0E12",pat:"gstar"},
+"sn":{pri:"#00853F",sec:"#FDEF42",acc:"#E31B23",dark:"#113D25",pat:"vtri"},
+"ch":{pri:"#D52B1E",sec:"#FFFFFF",acc:"#B71C1C",dark:"#4B1111",pat:"swiss"},
+"es":{pri:"#AA151B",sec:"#F1BF00",acc:"#AA151B",dark:"#4A0A0E",pat:"htri"},
+"br":{pri:"#009C3B",sec:"#FFDF00",acc:"#002776",dark:"#063B1E",pat:"gstar"},
+"pt":{pri:"#006600",sec:"#FF0000",acc:"#FFD700",dark:"#0A2A0A",pat:"side"},
+"be":{pri:"#222",sec:"#FDDA24",acc:"#EF3340",dark:"#111",pat:"vtri"}};
+const DEF_THEME={pri:"#3a567a",sec:"#ffffff",acc:"#2ba4ff",dark:"#152238",pat:"diag"};
 
 /* ============================ ESTADO ============================ */
 let DATA=null, GM=[], META={}, SCORES={}, REAL={}, KOWIN={}, KOREAL={}, RES={};
 let TABLAS={}, MAPA3={}, KORES={}, ESTILO="spotlight", FLIP={}, PHOTOS={};
-let FSORT="fifa", FDIR=1, FFILTER="all", CALFILT="all";
+let FSORT="fifa", FDIR=1, FFILTER="all", FQ="", CALFILT="all", CALTEAM="all";
 
 /* ============================ UTILS ============================ */
 const flagUrl=t=>ISO[t]?`https://flagcdn.com/w40/${ISO[t]}.png`:"";
@@ -600,7 +628,29 @@ function renderTerceros(rank){
 /* ============================ RENDER CUADRO ============================ */
 const LEFT_LEAF=[73,75,74,77,83,84,81,82], RIGHT_LEAF=[76,78,79,80,86,88,85,87];
 const LEFT_SET=new Set([...LEFT_LEAF,89,90,93,94,97,98,101]);
+function mboxmHTML(n){
+  const par=KORES[n]||["",""],t1=par[0],t2=par[1];
+  const real=n in KOREAL,fin=n===104,gan=KOWIN[n];
+  const row=eq=>{const w=gan===eq&&eq,clic=eq&&!esEtiqueta(eq);
+    return `<div class="rowm ${w?'win':''} ${clic?'clic':''}" ${clic?`onclick="elegir(${n},'${esc(eq).replace(/'/g,"\\'")}')"`:""}>`+
+      `${flagImg(eq)}<span>${esc(corto(eq,20))||"(por definir)"}</span></div>`;};
+  return `<div class="mboxm ${fin?'final':(real?'real':'')}"><div class="cab">#${n} ${META[n]?META[n].fecha:""}</div>${row(t1)}${row(t2)}</div>`;
+}
+function renderCuadroMobile(){
+  const RM=[["DIECISEISAVOS",Array.from({length:16},(_,i)=>73+i)],["OCTAVOS",[89,90,91,92,93,94,95,96]],
+    ["CUARTOS",[97,98,99,100]],["SEMIS",[101,102]],["3ER PUESTO",[103]],["FINAL",[104]]];
+  let h="";const champ=KOWIN[104];
+  if(champ&&!esEtiqueta(champ))
+    h+=`<div class="champ" style="position:static;width:auto;margin:0 0 12px">
+      <div class="hd">CAMPEÓN DEL MUNDO</div><div class="cup">🏆</div>
+      <div class="nm">${flagImg(champ)} ${esc(corto(champ,18))}</div></div>`;
+  for(const[nm,nums]of RM)
+    h+=`<details class="acc-round" open><summary>${nm}</summary>${nums.map(mboxmHTML).join("")}</details>`;
+  document.getElementById("tab-cuadro").innerHTML=`<div class="panel"><div class="acc" style="background:var(--green)"></div>
+    <h2>CUADRO</h2><div class="psub">Tocá un equipo para hacerlo ganar</div><div class="pbody">${h}</div></div>`;
+}
 function renderCuadro(){
+  if(window.innerWidth<=640)return renderCuadroMobile();
   const cw=156,ch=58,gap=18,pitch=186,x0=16,y0=44;
   const xFinal=x0+4*pitch;
   const feeders={};for(const[n,[a,b]]of Object.entries(LLAVES))feeders[n]=[+a.slice(1),+b.slice(1)];
@@ -717,8 +767,24 @@ function records(){
   r.push(["Hat-tricks (3+ en un partido)",hats.length?hats.slice(0,4).join(", "):"ninguno todavia"]);
   return r;
 }
-function patternCss(th){
-  return `repeating-linear-gradient(125deg,${th.acc}22 0 6px,transparent 6px 16px)`;
+function _star(cx,cy,R,r){let p=[];for(let k=0;k<10;k++){const rr=k%2?r:R;
+  const a=(-90+k*36)*Math.PI/180;p.push((cx+Math.cos(a)*rr).toFixed(1)+","+(cy+Math.sin(a)*rr).toFixed(1));}return p.join(" ");}
+function patSVG(th){
+  const W=100,H=140,p=th.pri,s=th.sec,a=th.acc,pat=th.pat||"diag";let g="";
+  if(pat==="vtri")g=`<rect width="33.3" height="${H}" fill="${p}"/><rect x="33.3" width="33.3" height="${H}" fill="${s}"/><rect x="66.6" width="33.4" height="${H}" fill="${a}"/>`;
+  else if(pat==="htri"){const h=H/3;g=`<rect width="${W}" height="${h}" fill="${p}"/><rect y="${h}" width="${W}" height="${h}" fill="${s}"/><rect y="${2*h}" width="${W}" height="${h}" fill="${a}"/>`;}
+  else if(pat==="nordic")g=`<rect width="${W}" height="${H}" fill="${p}"/><rect x="28" width="15" height="${H}" fill="${s}"/><rect y="55" width="${W}" height="15" fill="${s}"/><rect x="32" width="7" height="${H}" fill="${a}"/><rect y="59" width="${W}" height="7" fill="${a}"/>`;
+  else if(pat==="george")g=`<rect width="${W}" height="${H}" fill="${p}"/><rect x="43" width="14" height="${H}" fill="${s}"/><rect y="63" width="${W}" height="14" fill="${s}"/>`;
+  else if(pat==="swiss")g=`<rect width="${W}" height="${H}" fill="${p}"/><rect x="42" y="42" width="16" height="56" fill="${s}"/><rect x="22" y="62" width="56" height="16" fill="${s}"/>`;
+  else if(pat==="rising"){g=`<rect width="${W}" height="${H}" fill="${s}"/>`;for(let i=0;i<24;i++){const an=i*15*Math.PI/180;g+=`<line x1="50" y1="70" x2="${(50+Math.cos(an)*120).toFixed(1)}" y2="${(70+Math.sin(an)*120).toFixed(1)}" stroke="${p}" stroke-width="3"/>`;}g+=`<circle cx="50" cy="70" r="30" fill="${p}"/>`;}
+  else if(pat==="sun"){g=`<rect width="33.3" height="${H}" fill="${p}"/><rect x="33.3" width="33.3" height="${H}" fill="${s}"/><rect x="66.6" width="33.4" height="${H}" fill="${p}"/>`;for(let i=0;i<24;i++){const an=i*15*Math.PI/180;g+=`<line x1="50" y1="62" x2="${(50+Math.cos(an)*42).toFixed(1)}" y2="${(62+Math.sin(an)*42).toFixed(1)}" stroke="${a}" stroke-width="2"/>`;}g+=`<circle cx="50" cy="62" r="9" fill="${a}"/>`;}
+  else if(pat==="side")g=`<rect width="${W}" height="${H}" fill="${s}"/><rect width="24" height="${H}" fill="${p}"/><rect x="76" width="24" height="${H}" fill="${p}"/><polygon points="50,46 64,64 50,82 36,64" fill="none" stroke="${a}" stroke-width="3"/>`;
+  else if(pat==="stars"){g=`<rect width="${W}" height="${H}" fill="${p}"/>`;for(let i=0;i<6;i++)g+=`<rect y="${42+i*15}" width="${W}" height="7" fill="${i%2?s:a}"/>`;}
+  else if(pat==="gstar")g=`<rect width="${W}" height="${H}" fill="${p}"/><polygon points="${_star(50,64,40,16)}" fill="none" stroke="${a}" stroke-width="3"/>`;
+  else if(pat==="owave"){g=`<rect width="${W}" height="${H}" fill="${p}"/>`;[a,s,a].forEach((c,i)=>g+=`<path d="M0 ${48+i*24} Q25 ${40+i*24} 50 ${48+i*24} T100 ${48+i*24}" stroke="${c}" stroke-width="6" fill="none"/>`);}
+  else {g=`<rect width="${W}" height="${H}" fill="${p}"/>`;for(let x=-H;x<W;x+=14)g+=`<line x1="${x}" y1="${H}" x2="${x+H}" y2="0" stroke="${a}" stroke-width="4"/>`;}
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice">${g}</svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
 }
 function figHtml(p,i){
   const tier=tierDe(p.g),rt=rating(p.g,p.p),top3=i<3,id="fig"+i;
@@ -744,7 +810,7 @@ function figHtml(p,i){
     `<div class="attr"><b>${k}</b><span class="v">${A[k]}</span>
       <div class="bar"><i style="width:${A[k]}%"></i></div></div>`).join("");
   const back=`<div class="face back" style="--c-pri:${th.pri};--c-sec:${th.sec};--c-dark:${th.dark}">
-    <div class="pat" style="background:${patternCss(th)}"></div>
+    <div class="pat" style="background-image:${patSVG(th)};background-size:cover;background-position:center"></div>
     <div class="bx hd"><span>${esc(corto(p.t.toUpperCase(),16))}</span><span>${tier.toUpperCase()}</span></div>
     <div class="bx id"><div class="rt">${rt}</div><div><div class="nm">${esc(corto(p.n,16))}</div>
       <div class="sub">${rk?"FIFA #"+rk+" · ":""}${esc(corto(p.t,12))}</div></div></div>
@@ -777,37 +843,49 @@ function formaHtml(s){
 }
 function setFifaSort(k){ if(FSORT===k)FDIR*=-1; else {FSORT=k;FDIR=1;} renderFifa(); }
 function setFifaFilter(c){ FFILTER=c; renderFifa(); }
-function renderFifa(){
+function setFifaQuery(v){ FQ=v; const b=document.getElementById("fifaBody"); if(b)b.innerHTML=fifaRowsHTML(); }
+const _inf=t=>TEAMINFO[t]||["?",0,0,0];
+function _mejor(t){const i=_inf(t);return i[1]>0?("Campeón"+(i[1]>1?" ×"+i[1]:"")):(i[2]>0?"Finalista":"–");}
+function fifaRowsHTML(){
   const ST=statsTorneo();
-  const inf=t=>TEAMINFO[t]||["?",0,0,0];
   let eqs=[...new Set(GM.flatMap(m=>[m.t1,m.t2]))];
-  if(FFILTER!=="all")eqs=eqs.filter(t=>inf(t)[0]===FFILTER);
+  if(FFILTER!=="all")eqs=eqs.filter(t=>_inf(t)[0]===FFILTER);
+  if(FQ.trim())eqs=eqs.filter(t=>t.toLowerCase().includes(FQ.trim().toLowerCase()));
   const cmp={
     fifa:(a,b)=>(RANKING_FIFA[a]||999)-(RANKING_FIFA[b]||999),
-    mun:(a,b)=>inf(b)[3]-inf(a)[3],
-    tit:(a,b)=>inf(b)[1]-inf(a)[1]||inf(b)[2]-inf(a)[2],
+    mun:(a,b)=>_inf(b)[3]-_inf(a)[3],
+    tit:(a,b)=>_inf(b)[1]-_inf(a)[1]||_inf(b)[2]-_inf(a)[2],
     forma:(a,b)=>((ST[b]||{}).pts||0)-((ST[a]||{}).pts||0)||((ST[b]||{}).dg||0)-((ST[a]||{}).dg||0),
   }[FSORT];
   eqs.sort((a,b)=>{let v=cmp(a,b)*FDIR; if(v===0)v=(RANKING_FIFA[a]||999)-(RANKING_FIFA[b]||999); return v;});
-  const arrow=k=>FSORT===k?(FDIR>0?" ▾":" ▴"):"";
-  const rows=eqs.map(t=>{const i=inf(t);
+  return eqs.map(t=>{const i=_inf(t);
     return `<tr><td><span class="rkpos">${RANKING_FIFA[t]||"-"}</span>${flagImg(t)}${esc(t)}</td>
       <td class="center">${i[0]}</td><td class="center">${i[3]}</td>
       <td class="center" title="Finales jugadas: ${i[2]}">${i[1]?("🏆 "+i[1]):"–"}</td>
-      <td>${formaHtml(ST[t])}</td></tr>`;}).join("");
+      <td>${esc(_mejor(t))}</td><td>${formaHtml(ST[t])}</td></tr>`;}).join("");
+}
+function renderFifa(){
+  const arrow=k=>FSORT===k?(FDIR>0?" ▾":" ▴"):"";
+  const champs=Object.entries(TEAMINFO).filter(([,i])=>i[1]>0).sort((a,b)=>b[1][1]-a[1][1]||a[0].localeCompare(b[0]));
+  const podio=champs.map(([t,i])=>`<span class="champ-chip">${flagImg(t)} <b>${esc(t)}</b> 🏆${i[1]}</span>`).join("");
   const fbar=`<div class="fbar"><button class="fbtn ${FFILTER==='all'?'on':''}" onclick="setFifaFilter('all')">Todas</button>`+
     CONFEDS.map(c=>`<button class="fbtn ${FFILTER===c?'on':''}" onclick="setFifaFilter('${c}')">${c}</button>`).join("")+`</div>`;
   document.getElementById("tab-fifa").innerHTML=`<div class="panel">
     <div class="acc" style="background:var(--cyan)"></div>
     <h2>RANKING FIFA</h2>
     <div class="psub">Ranking 11/06/2026 · históricos aprox. · forma = Mundial 2026 (clic en encabezados para ordenar)</div>
-    <div class="pbody">${fbar}<div class="ftwrap"><table class="rank"><thead><tr>
+    <div class="pbody">
+      <div class="champrow">CAMPEONES: ${podio}</div>
+      <input class="search" placeholder="Buscar selección…" value="${esc(FQ)}" oninput="setFifaQuery(this.value)">
+      ${fbar}
+      <div class="ftwrap"><table class="rank"><thead><tr>
       <th class="sortable" onclick="setFifaSort('fifa')">SELECCIÓN${arrow('fifa')}</th>
       <th class="center">CONF</th>
       <th class="center sortable" onclick="setFifaSort('mun')">MUN${arrow('mun')}</th>
       <th class="center sortable" onclick="setFifaSort('tit')">🏆${arrow('tit')}</th>
+      <th>MEJOR</th>
       <th class="sortable" onclick="setFifaSort('forma')">FORMA 2026${arrow('forma')}</th>
-    </tr></thead><tbody>${rows}</tbody></table></div></div></div>`;
+    </tr></thead><tbody id="fifaBody">${fifaRowsHTML()}</tbody></table></div></div></div>`;
 }
 /* ---------- Calendario (hora local) ---------- */
 function localDate(date,time){
@@ -824,11 +902,21 @@ function rondaTxt(x){
     "Semi-finals":"Semis","Final":"Final","Match for third place":"3er","Play-off for third place":"3er"};
   return R[x.round]||x.round||"";}
 function setCalFilter(c){CALFILT=c;renderCalendario();}
+function setCalTeam(t){CALTEAM=t;renderCalendario();}
+function scrollHoy(){
+  const cont=document.getElementById("tab-calendario");if(!cont)return;
+  const today=new Date();today.setHours(0,0,0,0);const tt=today.getTime();
+  const seps=[...cont.querySelectorAll(".dsep")];
+  const target=seps.find(s=>+s.dataset.ts>=tt)||seps[seps.length-1];
+  if(target)target.scrollIntoView({behavior:"smooth",block:"center"});
+}
 function renderCalendario(){
   if(!DATA)return;
   const ms=(DATA.matches||[]).filter(x=>x.team1&&x.team2);
-  const fil=ms.filter(x=>{const ft=(x.score||{}).ft;
+  const teams=[...new Set(ms.flatMap(x=>[x.team1,x.team2]).filter(t=>!esEtiqueta(t)))].sort();
+  let fil=ms.filter(x=>{const ft=(x.score||{}).ft;
     if(CALFILT==="prox")return !ft; if(CALFILT==="jug")return !!ft; return true;});
+  if(CALTEAM!=="all")fil=fil.filter(x=>x.team1===CALTEAM||x.team2===CALTEAM);
   const ck=x=>{const d=localDate(x.date,x.time);
     return d?d.getTime():Date.parse((x.date||"2100-01-01")+"T00:00:00Z");};
   fil.sort((a,b)=>ck(a)-ck(b));
@@ -837,7 +925,8 @@ function renderCalendario(){
     const d=localDate(x.date,x.time);
     const dayKey=d?d.toDateString():x.date;
     if(dayKey!==lastDay){lastDay=dayKey;
-      rows+=`<tr class="dsep"><td colspan="3">${d?diaTxtD(d):x.date}</td></tr>`;}
+      const ts=d?new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime():Date.parse(x.date);
+      rows+=`<tr class="dsep" data-ts="${ts}"><td colspan="3">${d?diaTxtD(d):x.date}</td></tr>`;}
     const ft=(x.score||{}).ft;
     const mid=ft?`<span class="res">${ft[0]} - ${ft[1]}</span>`:`<span class="vs">vs</span>`;
     const part=`<span class="tagr">${esc(rondaTxt(x))}</span>${flagImg(x.team1)} ${esc(corto(x.team1,15))} ${mid} ${esc(corto(x.team2,15))} ${flagImg(x.team2)}`;
@@ -846,12 +935,17 @@ function renderCalendario(){
   }
   const chips=[["all","Todos"],["prox","Próximos"],["jug","Jugados"]].map(([k,d])=>
     `<button class="fbtn ${CALFILT===k?'on':''}" onclick="setCalFilter('${k}')">${d}</button>`).join("");
+  const opts=`<option value="all">Todas las selecciones</option>`+
+    teams.map(t=>`<option value="${esc(t)}" ${CALTEAM===t?"selected":""}>${esc(t)}</option>`).join("");
   document.getElementById("tab-calendario").innerHTML=`<div class="panel">
     <div class="acc" style="background:#8b5cf6"></div>
     <h2>CALENDARIO</h2>
     <div class="psub">Horarios en tu hora local · ${fil.length} partidos</div>
-    <div class="pbody"><div class="fbar">${chips}</div>
-    <div class="ftwrap"><table class="rank cal"><thead><tr>
+    <div class="pbody">
+      <div class="fbar"><button class="fbtn" onclick="scrollHoy()">📅 Hoy</button>
+        <select class="search" onchange="setCalTeam(this.value)">${opts}</select></div>
+      <div class="fbar">${chips}</div>
+      <div class="ftwrap"><table class="rank cal"><thead><tr>
       <th>HORA</th><th>PARTIDO</th><th>SEDE</th></tr></thead>
       <tbody>${rows}</tbody></table></div></div></div>`;
 }
@@ -952,7 +1046,31 @@ function bannerLines(){
   svg.setAttribute("width",w);svg.setAttribute("height",h);svg.innerHTML=s;
 }
 function setStatus(t){document.getElementById("status").textContent=t;}
-window.addEventListener("resize",bannerLines);
+let _rt;
+window.addEventListener("resize",()=>{bannerLines();clearTimeout(_rt);
+  _rt=setTimeout(()=>{if(DATA)renderCuadro();},200);});
+
+/* auto-actualizacion (no pisa tu simulacion) */
+function hayOverrides(){
+  for(const k in REAL){if(JSON.stringify(REAL[k])!==JSON.stringify(SCORES[k]))return true;}
+  for(const n in KOWIN){if(KOWIN[n]!==KOREAL[n])return true;}
+  return false;
+}
+setInterval(()=>{if(DATA&&!hayOverrides())actualizar();},600000);
+
+/* parallax sutil del header (solo desktop) */
+function initParallax(){
+  const bn=document.querySelector(".banner");if(!bn)return;
+  if(window.matchMedia("(hover: none)").matches||window.matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+  bn.addEventListener("mousemove",e=>{const r=bn.getBoundingClientRect();
+    const px=(e.clientX-r.left)/r.width-.5,py=(e.clientY-r.top)/r.height-.5;
+    const ti=bn.querySelector(".title"),ln=bn.querySelector(".lines");
+    if(ti)ti.style.transform=`translate(${(px*10).toFixed(1)}px,${(py*6).toFixed(1)}px)`;
+    if(ln)ln.style.transform=`translate(${(px*-14).toFixed(1)}px,${(py*-8).toFixed(1)}px)`;});
+  bn.addEventListener("mouseleave",()=>{const ti=bn.querySelector(".title"),ln=bn.querySelector(".lines");
+    if(ti)ti.style.transform="";if(ln)ln.style.transform="";});
+}
+if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}
 
 /* ---------- Temas ---------- */
 const THEMES_UI=[["airy","Claro"],["glass","Oscuro"],["bold","Vibrante"]];
@@ -967,7 +1085,7 @@ function applyTheme(){
 function setTheme(t){THEME=t;localStorage.setItem("wc26theme2",t);applyTheme();}
 
 /* ============================ INIT ============================ */
-renderTabs();applyTheme();bannerLines();cargar(false);
+renderTabs();applyTheme();bannerLines();initParallax();cargar(false);
 </script>
 </body>
 </html>
