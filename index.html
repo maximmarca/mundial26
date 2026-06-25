@@ -827,6 +827,9 @@ function renderCalendario(){
   const ms=(DATA.matches||[]).filter(x=>x.team1&&x.team2);
   const fil=ms.filter(x=>{const ft=(x.score||{}).ft;
     if(CALFILT==="prox")return !ft; if(CALFILT==="jug")return !!ft; return true;});
+  const ck=x=>{const d=localDate(x.date,x.time);
+    return d?d.getTime():Date.parse((x.date||"2100-01-01")+"T00:00:00Z");};
+  fil.sort((a,b)=>ck(a)-ck(b));
   let rows="",lastDay="";
   for(const x of fil){
     const d=localDate(x.date,x.time);
