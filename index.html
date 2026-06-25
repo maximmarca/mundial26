@@ -105,8 +105,10 @@ table{width:100%;border-collapse:collapse;font-size:13px}
 .stand td{padding:4px 6px;border-top:1px solid var(--line)}
 .stand tr.q td{background:var(--qual-bg);color:var(--qual-fg)}
 .stand tr.t3 td{background:var(--third-bg);color:var(--third-fg)}
-.flag{height:18px;width:18px;object-fit:cover;vertical-align:middle;border-radius:50%;
-  box-shadow:0 0 0 1.5px #fff,0 0 0 2.5px rgba(0,0,0,.18)}
+.flag{width:21px;height:24px;object-fit:cover;vertical-align:middle;
+  clip-path:polygon(0 0,100% 0,100% 62%,50% 100%,0 62%);
+  filter:drop-shadow(.7px 0 0 #fff) drop-shadow(-.7px 0 0 #fff) drop-shadow(0 .7px 0 #fff)
+         drop-shadow(0 -.7px 0 #fff) drop-shadow(0 1px 1.5px rgba(0,0,0,.3))}
 .matches{padding:6px 12px 12px}
 .mrow{display:flex;align-items:center;gap:4px;padding:2px 0;font-size:12px}
 .mrow .t1,.mrow .t2{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
@@ -404,7 +406,7 @@ let FSORT="fifa", FDIR=1, FFILTER="all", CALFILT="all";
 
 /* ============================ UTILS ============================ */
 const flagUrl=t=>ISO[t]?`https://flagcdn.com/w40/${ISO[t]}.png`:"";
-const flagImg=t=>ISO[t]?`<img class="flag" src="${flagUrl(t)}" alt="" width="18" height="18" loading="lazy" decoding="async">`:"";
+const flagImg=t=>ISO[t]?`<img class="flag" src="${flagUrl(t)}" alt="" width="21" height="24" loading="lazy" decoding="async">`:"";
 const cc=t=>{const c=ISO[t]||"";return c.split("-").pop().toUpperCase();};
 const esEtiqueta=n=>!n||/^[123][A-Z]?$/.test(n)||/^(W|L|Gan|Perd|3:)/.test(n)||n.includes("/")||n.includes("?")||n.startsWith("Gan.")||n.startsWith("Perd.");
 const corto=(s,n)=>!s?s:(s.length<=n?s:s.slice(0,n-1)+".");
