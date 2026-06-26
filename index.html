@@ -576,6 +576,7 @@ function recalcular(){
   renderTerceros(rank);
   resolverCuadro();renderCuadro();
   renderFifa();
+  if(document.getElementById("tab-calendario").innerHTML)renderCalendario();
 }
 function restaurar(){RES={...REAL};SCORES={...REAL};KOWIN={...KOREAL};renderGrupos();recalcular();}
 
@@ -1012,7 +1013,10 @@ function renderCalendario(){
       rows+=`<tr class="dsep" data-ts="${ts}"><td colspan="3">${d?diaTxtD(d):x.date}</td></tr>`;}
     const ft=(x.score||{}).ft;
     const mid=ft?`<span class="res">${ft[0]} - ${ft[1]}</span>`:`<span class="vs">vs</span>`;
-    const part=`<span class="tagr">${esc(rondaTxt(x))}</span>${flagImg(x.team1)} ${esc(corto(x.team1,15))} ${mid} ${esc(corto(x.team2,15))} ${flagImg(x.team2)}`;
+    // eliminatoria: usar el cuadro calculado (consistente con la pestaña Cuadro)
+    const par=(x.num!=null&&KORES[x.num])?KORES[x.num]:[x.team1,x.team2];
+    const t1=par[0],t2=par[1];
+    const part=`<span class="tagr">${esc(rondaTxt(x))}</span>${flagImg(t1)} ${esc(corto(t1,15))} ${mid} ${esc(corto(t2,15))} ${flagImg(t2)}`;
     rows+=`<tr><td class="hora">${d?hmD(d):horaSede(x.time)}</td><td class="pt">${part}</td>`+
       `<td class="sede">${esc(x.ground||"")}</td></tr>`;
   }
