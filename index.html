@@ -170,6 +170,9 @@ select.search{max-width:240px;cursor:pointer}
 .cal .vs{color:var(--muted)} .cal .res{font-weight:bold}
 .tagr{display:inline-block;font-size:10px;font-weight:bold;color:var(--muted);
   background:var(--th-bg);border-radius:6px;padding:1px 6px;margin-right:6px}
+.tag-prov{display:inline-block;font-size:9px;font-weight:bold;color:#8a5b00;background:#fff3d6;
+  border:1px solid #e6c34d;border-radius:6px;padding:1px 6px;margin-left:6px;white-space:nowrap}
+.mbox.prov,.mboxm.prov{border-style:dashed}
 .cal .pt{white-space:nowrap}
 
 /* ---------- Cuadro ---------- */
@@ -561,6 +564,20 @@ function resolverCuadro(){
   for(const n of Object.keys(KOWIN).map(Number)){const p=KORES[n];
     if(p&&!p.includes(KOWIN[n])&&!(n in KOREAL))delete KOWIN[n];}
 }
+/* ¿el cruce de un partido de eliminatoria ya esta definido (por resultados REALES)? */
+function _grpComplReal(L){const ps=GM.filter(m=>m.g===L);return ps.length>=6&&ps.every(m=>REAL[m.id]);}
+function _allGrpReal(){return GRUPOS.every(_grpComplReal);}
+function _codeLock(c){
+  if(c[0]==="1"||c[0]==="2")return _grpComplReal(c[1]);
+  if(c.startsWith("3:"))return _allGrpReal();
+  if(c[0]==="W"||c[0]==="L")return (+c.slice(1)) in KOREAL;
+  return false;
+}
+function koDefinido(num){
+  if(num in KOREAL)return true;
+  const codes=R32[num]||LLAVES[num]; if(!codes)return false;
+  return codes.every(_codeLock);
+}
 
 /* ============================ RECALCULAR ============================ */
 function recalcular(){
@@ -678,7 +695,8 @@ function mboxmHTML(n){
   const row=eq=>{const w=gan===eq&&eq,clic=eq&&!esEtiqueta(eq);
     return `<div class="rowm ${w?'win':''} ${clic?'clic':''}" ${clic?`onclick="elegir(${n},'${esc(eq).replace(/'/g,"\\'")}')"`:""}>`+
       `${flagImg(eq)}<span>${esc(corto(eq,20))||"(por definir)"}</span></div>`;};
-  return `<div class="mboxm ${fin?'final':(real?'real':'')}"><div class="cab">#${n} ${META[n]?META[n].fecha:""}</div>${row(t1)}${row(t2)}</div>`;
+  const prov=(!real&&!koDefinido(n))?" prov":"";
+  return `<div class="mboxm ${fin?'final':(real?'real':'')}${prov}"><div class="cab">#${n} ${META[n]?META[n].fecha:""}${prov?' · por confirmar':''}</div>${row(t1)}${row(t2)}</div>`;
 }
 function renderCuadroMobile(){
   const RM=[["DIECISEISAVOS",Array.from({length:16},(_,i)=>73+i)],["OCTAVOS",[89,90,91,92,93,94,95,96]],
@@ -755,7 +773,7 @@ function renderCuadro(){
 }
 function boxHtml(n,x,y){
   const[t1,t2]=KORES[n]||["",""];const real=n in KOREAL,fin=n===104;
-  const cls="mbox"+(fin?" final":(real?" real":""));
+  const cls="mbox"+(fin?" final":(real?" real":""))+((!real&&!koDefinido(n))?" prov":"");
   const gan=KOWIN[n];
   const row=(eq)=>{const w=gan===eq&&eq,clic=eq&&!esEtiqueta(eq);
     return `<div class="row ${w?"win":""} ${clic?"clic":""}" ${clic?`onclick="elegir(${n},'${esc(eq).replace(/'/g,"\\'")}')"`:""}>
@@ -1016,7 +1034,8 @@ function renderCalendario(){
     // eliminatoria: usar el cuadro calculado (consistente con la pestaña Cuadro)
     const par=(x.num!=null&&KORES[x.num])?KORES[x.num]:[x.team1,x.team2];
     const t1=par[0],t2=par[1];
-    const part=`<span class="tagr">${esc(rondaTxt(x))}</span>${flagImg(t1)} ${esc(corto(t1,15))} ${mid} ${esc(corto(t2,15))} ${flagImg(t2)}`;
+    const prov=(x.num!=null&&!koDefinido(x.num))?`<span class="tag-prov">por confirmar</span>`:"";
+    const part=`<span class="tagr">${esc(rondaTxt(x))}</span>${flagImg(t1)} ${esc(corto(t1,15))} ${mid} ${esc(corto(t2,15))} ${flagImg(t2)}${prov}`;
     rows+=`<tr><td class="hora">${d?hmD(d):horaSede(x.time)}</td><td class="pt">${part}</td>`+
       `<td class="sede">${esc(x.ground||"")}</td></tr>`;
   }
