@@ -840,19 +840,33 @@ function patSVG(th){
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
 }
 function trofeoSVG(kind,size){
-  const M={mundial:["#fff3c0","#f0c63a","#a9780a","g"],plata:["#ffffff","#cdd6e6","#8a93a8","s"],
+  const M={mundial:["#fff7cf","#f0c63a","#a9780a","g"],plata:["#ffffff","#cdd6e6","#8a93a8","s"],
            bronce:["#f6dcb6","#cf9b5f","#6b3517","b"]};
-  const G=M[kind]||M.mundial,id="tr"+G[3],big=kind==="mundial",s=size||50;
+  const G=M[kind]||M.mundial,id="tr"+G[3],s=size||50,ln=G[2];
+  const grad=`<linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${G[0]}"/><stop offset=".5" stop-color="${G[1]}"/><stop offset="1" stop-color="${G[2]}"/></linearGradient>`;
+  if(kind==="mundial"){  // copa "mundial": globo terraqueo sobre pedestal (diseno propio)
+    const cid="cl"+id;
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 112" width="${s}" height="${Math.round(s*1.12)}" aria-hidden="true">
+      <defs>${grad}<clipPath id="${cid}"><circle cx="50" cy="44" r="27"/></clipPath></defs>
+      <rect x="24" y="98" width="52" height="10" rx="3" fill="url(#${id})" stroke="${ln}" stroke-width="1"/>
+      <rect x="33" y="88" width="34" height="11" rx="2" fill="url(#${id})"/>
+      <polygon points="45,72 55,72 53,88 47,88" fill="url(#${id})"/>
+      <circle cx="50" cy="44" r="27" fill="url(#${id})" stroke="${ln}" stroke-width="1.5"/>
+      <g clip-path="url(#${cid})" fill="none" stroke="${ln}" stroke-width="1.4" opacity=".85">
+        <ellipse cx="50" cy="44" rx="27" ry="9"/><ellipse cx="50" cy="44" rx="10" ry="27"/>
+        <ellipse cx="50" cy="44" rx="20" ry="27"/>
+        <line x1="23" y1="32" x2="77" y2="32"/><line x1="23" y1="56" x2="77" y2="56"/></g>
+      <ellipse cx="41" cy="34" rx="6" ry="9" fill="rgba(255,255,255,.55)"/>
+    </svg>`;
+  }
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 112" width="${s}" height="${Math.round(s*1.12)}" aria-hidden="true">
-    <defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="${G[0]}"/><stop offset=".5" stop-color="${G[1]}"/><stop offset="1" stop-color="${G[2]}"/></linearGradient></defs>
+    <defs>${grad}</defs>
     <path d="M30 24 C7 24 7 55 33 55" fill="none" stroke="url(#${id})" stroke-width="6"/>
     <path d="M70 24 C93 24 93 55 67 55" fill="none" stroke="url(#${id})" stroke-width="6"/>
     <path d="M27 18 H73 Q73 58 50 66 Q27 58 27 18 Z" fill="url(#${id})" stroke="${G[2]}" stroke-width="1.5"/>
     <rect x="45" y="65" width="10" height="14" fill="url(#${id})"/>
     <rect x="33" y="79" width="34" height="7" rx="2" fill="url(#${id})"/>
     <rect x="26" y="87" width="48" height="10" rx="3" fill="url(#${id})" stroke="${G[2]}" stroke-width="1"/>
-    ${big?`<polygon points="${_star(50,38,13,5.5)}" fill="rgba(255,255,255,.55)"/>`:""}
   </svg>`;
 }
 function figHtml(p,i){
