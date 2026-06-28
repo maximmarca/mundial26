@@ -1242,9 +1242,9 @@ async function _fetchLive(ymd){
   }catch(e){return [];}
 }
 async function actualizarLive(){
-  const h=new Date();const ay=new Date(+h-864e5),ma=new Date(+h+864e5);
+  const h=new Date();const a2=new Date(+h-2*864e5),ay=new Date(+h-864e5),ma=new Date(+h+864e5);
   let evs=[];
-  try{evs=(await Promise.all([_fetchLive(_ymd(ay)),_fetchLive(_ymd(h)),_fetchLive(_ymd(ma))])).flat();}catch(e){}
+  try{evs=(await Promise.all([_fetchLive(_ymd(a2)),_fetchLive(_ymd(ay)),_fetchLive(_ymd(h)),_fetchLive(_ymd(ma))])).flat();}catch(e){}
   const nv={};
   for(const e of evs){if(!e.t1||!e.t2||e.state==="pre")continue;
     nv[_lk(e.t1,e.t2)]={s1:e.s1,s2:e.s2,state:e.state,clock:e.clock,detail:e.detail};
