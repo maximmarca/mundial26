@@ -1357,9 +1357,11 @@ function _flowRedraw(){const n=_flowNode,el=document.querySelector(`.fnode[data-
 function flowZoom(f){const c=document.getElementById("flowCanvas");if(!c)return;
   const mx=c.clientWidth/2,my=c.clientHeight/2,ns=Math.min(2.4,Math.max(0.3,FLOW_TF.s*f));
   FLOW_TF.x=mx-(mx-FLOW_TF.x)*(ns/FLOW_TF.s);FLOW_TF.y=my-(my-FLOW_TF.y)*(ns/FLOW_TF.s);FLOW_TF.s=ns;_flowApplyTF();}
-function flowReset(){FLOW_NPOS={};const c=document.getElementById("flowCanvas");
-  const worldW=FLOW_X0+4*FLOW_PITCH+FNW+80;FLOW_TF={x:30,y:20,s:c?Math.min(1,(c.clientWidth-40)/worldW):1};
-  renderFlujo();}
+function _flowFitScale(worldW){const c=document.getElementById("flowCanvas");
+  const cw=c&&c.clientWidth>60?c.clientWidth:820;
+  return Math.max(0.35,Math.min(1.2,(cw-40)/worldW));}
+function flowReset(){FLOW_NPOS={};const worldW=FLOW_X0+4*FLOW_PITCH+FNW+80;
+  FLOW_TF={x:30,y:20,s:_flowFitScale(worldW)};renderFlujo();}
 function _flowBind(){
   const canvas=document.getElementById("flowCanvas");if(!canvas)return;
   canvas.onpointerdown=e=>{
@@ -1391,7 +1393,7 @@ function renderFlujo(){
       <div class="flow-canvas" id="flowCanvas"><div class="flow-world" id="flowWorld" style="width:${worldW}px;height:${worldH}px">
         <svg id="flowSvg" width="${worldW}" height="${worldH}">${flowEdgesSVG()}</svg>${nodes}
       </div></div></div></div></div>`;
-  if(!_flowInit){_flowInit=true;const c=document.getElementById("flowCanvas");FLOW_TF.s=c?Math.min(1,(c.clientWidth-40)/worldW):1;}
+  if(!_flowInit){_flowInit=true;FLOW_TF.s=_flowFitScale(worldW);}
   _flowApplyTF();_flowBind();
 }
 (function(){const s=document.createElement("style");s.textContent=`
