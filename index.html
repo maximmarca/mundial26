@@ -1231,12 +1231,33 @@ async function actualizarLive(){
   LIVE=nv;
   return Object.values(LIVE).some(x=>x.state==="in");
 }
-function _lvBadge(lv){if(!lv)return "";
-  if(lv.state==="in")return `<span class="lvb on"><span class="lvdot"></span>EN VIVO ${lv.s1}-${lv.s2}${(lv.clock||lv.detail)?" · "+esc(lv.clock||lv.detail):""}</span>`;
-  if(lv.state==="post")return `<span class="lvb fin">FINAL ${lv.s1}-${lv.s2}</span>`;
-  return "";}
+function _lvBadge(lv){if(!lv||lv.state!=="in")return "";
+  return `<span class="lvb on"><span class="lvdot"></span>EN VIVO ${lv.s1}-${lv.s2}${(lv.clock||lv.detail)?" · "+esc(lv.clock||lv.detail):""}</span>`;}
+let _liveApplied={};
+/* Escribe el parcial en vivo en los casilleros del grupo (alimenta la tabla).
+   No pisa lo que cargaste a mano; cede a openfootball cuando llega el final oficial. */
+function aplicarLiveAInputs(){
+  let changed=false;
+  for(const m of GM){
+    const lv=liveDe(m.t1,m.t2);
+    const i1=document.getElementById("s_"+m.id+"_1"),i2=document.getElementById("s_"+m.id+"_2");
+    if(!i1||!i2)continue;
+    if(lv&&(lv.state==="in"||lv.state==="post")&&lv.s1!=null&&lv.s2!=null&&REAL[m.id]==null){
+      const prev=_liveApplied[m.id],c1=i1.value.trim(),c2=i2.value.trim();
+      const tocado=(c1!==""||c2!=="")&&!(prev&&c1===String(prev[0])&&c2===String(prev[1]));
+      if(!tocado){
+        if(c1!==String(lv.s1)||c2!==String(lv.s2)){i1.value=lv.s1;i2.value=lv.s2;changed=true;}
+        _liveApplied[m.id]=[lv.s1,lv.s2];i1.classList.add("livein");i2.classList.add("livein");
+      }
+    }else if(_liveApplied[m.id]&&REAL[m.id]!=null){
+      delete _liveApplied[m.id];i1.classList.remove("livein");i2.classList.remove("livein");
+    }
+  }
+  return changed;
+}
 function pintarLive(){
   for(const m of GM){const el=document.getElementById("lv_"+m.id);if(el)el.innerHTML=_lvBadge(liveDe(m.t1,m.t2));}
+  if(aplicarLiveAInputs())recalcular();
   const pc=document.getElementById("pill-calendario");
   if(pc&&pc.getAttribute("aria-selected")==="true")renderCalendario();
 }
@@ -1255,6 +1276,7 @@ document.addEventListener("visibilitychange",()=>{if(!document.hidden){clearTime
 .lvdot{width:7px;height:7px;border-radius:50%;background:#e5103b;animation:lvpulse 1.1s infinite}
 .res.live{color:#e5103b;font-weight:800}
 .res.live small{font-weight:700;opacity:.85}
+.mrow input.livein{color:#e5103b;font-weight:800;border-color:rgba(229,16,59,.45)}
 @keyframes lvpulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}`;
 document.head.appendChild(s);})();
 
