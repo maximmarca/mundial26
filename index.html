@@ -469,6 +469,7 @@ async function actualizar(){
     SCORES={...REAL};KOWIN={...KOREAL};
     setStatus(`${GM.length} partidos · actualizado`);
     renderGrupos();recalcular();renderStats();renderCalendario();bajarFotos();
+    _liveTick();
   }catch(e){setStatus("No se pudo actualizar (sin internet)");}
 }
 function parse(){
@@ -652,12 +653,14 @@ function renderGrupos(){
         <input id="s_${m.id}_1" value="${r?r[0]:""}" onchange="recalcular()">
         <span style="color:var(--muted)">:</span>
         <input id="s_${m.id}_2" value="${r?r[1]:""}" onchange="recalcular()">
-        ${flagImg(m.t2)}<span class="t2">${esc(corto(m.t2,12))}</span></div>`;
+        ${flagImg(m.t2)}<span class="t2">${esc(corto(m.t2,12))}</span></div>
+        <div class="live" id="lv_${m.id}"></div>`;
     });
     h+=`</div></div>`;
   });
   h+='</div>';
   document.getElementById("tab-grupos").innerHTML=h;
+  pintarLive();
 }
 function pintarStandings(){
   for(const L of GRUPOS){const tb=document.getElementById("st_"+L);if(!tb)continue;
@@ -1030,10 +1033,15 @@ function renderCalendario(){
       const ts=d?new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime():Date.parse(x.date);
       rows+=`<tr class="dsep" data-ts="${ts}"><td colspan="3">${d?diaTxtD(d):x.date}</td></tr>`;}
     const ft=(x.score||{}).ft;
-    const mid=ft?`<span class="res">${ft[0]} - ${ft[1]}</span>`:`<span class="vs">vs</span>`;
     // eliminatoria: usar el cuadro calculado (consistente con la pestaña Cuadro)
     const par=(x.num!=null&&KORES[x.num])?KORES[x.num]:[x.team1,x.team2];
     const t1=par[0],t2=par[1];
+    const lv=liveDe(t1,t2);
+    let mid;
+    if(lv&&lv.state==="in")mid=`<span class="res live">${lv.s1} - ${lv.s2} <small>● ${esc(lv.clock||lv.detail||"EN VIVO")}</small></span>`;
+    else if(ft)mid=`<span class="res">${ft[0]} - ${ft[1]}</span>`;
+    else if(lv&&lv.state==="post")mid=`<span class="res">${lv.s1} - ${lv.s2}</span>`;
+    else mid=`<span class="vs">vs</span>`;
     const prov=(x.num!=null&&!koDefinido(x.num))?`<span class="tag-prov">por confirmar</span>`:"";
     const part=`<span class="tagr">${esc(rondaTxt(x))}</span>${flagImg(t1)} ${esc(corto(t1,15))} ${mid} ${esc(corto(t2,15))} ${flagImg(t2)}${prov}`;
     rows+=`<tr><td class="hora">${d?hmD(d):horaSede(x.time)}</td><td class="pt">${part}</td>`+
@@ -1190,10 +1198,71 @@ function applyTheme(){
 }
 function setTheme(t){THEME=t;localStorage.setItem("wc26theme2",t);applyTheme();}
 
+/* ============================ MARCADOR EN VIVO (ESPN) ============================ */
+/* Fuente: site.api.espn.com (CORS abierto, sin key). Solo overlay visual: NO toca el simulador. */
+const LIVE_BASE="https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard";
+const ESPN_MAP={"United States":"USA","Korea Republic":"South Korea","IR Iran":"Iran",
+  "Türkiye":"Turkey","Turkiye":"Turkey","Czechia":"Czech Republic","Côte d'Ivoire":"Ivory Coast",
+  "Cote d'Ivoire":"Ivory Coast","Cabo Verde":"Cape Verde","Bosnia and Herzegovina":"Bosnia & Herzegovina",
+  "Curacao":"Curaçao","Congo DR":"DR Congo"};
+const mapTeam=n=>ESPN_MAP[n]||n;
+let LIVE={}, _liveTimer=null;
+const _ymd=d=>""+d.getFullYear()+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0");
+const _lk=(a,b)=>a+"||"+b;
+function liveDe(t1,t2){return LIVE[_lk(t1,t2)]||null;}
+async function _fetchLive(ymd){
+  try{const r=await fetch(LIVE_BASE+"?dates="+ymd);if(!r.ok)return [];const d=await r.json();
+    return (d.events||[]).map(ev=>{const c=(ev.competitions||[])[0]||{};
+      const st=(c.status||{}).type||{};const cs=c.competitors||[];
+      const H=cs.find(x=>x.homeAway==="home")||cs[0]||{},A=cs.find(x=>x.homeAway==="away")||cs[1]||{};
+      return {t1:mapTeam((H.team||{}).displayName||""),t2:mapTeam((A.team||{}).displayName||""),
+        s1:H.score!=null?parseInt(H.score):null,s2:A.score!=null?parseInt(A.score):null,
+        state:st.state||"",clock:(c.status||{}).displayClock||"",detail:st.shortDetail||st.detail||""};});
+  }catch(e){return [];}
+}
+async function actualizarLive(){
+  const h=new Date();const ay=new Date(+h-864e5),ma=new Date(+h+864e5);
+  let evs=[];
+  try{evs=(await Promise.all([_fetchLive(_ymd(ay)),_fetchLive(_ymd(h)),_fetchLive(_ymd(ma))])).flat();}catch(e){}
+  const nv={};
+  for(const e of evs){if(!e.t1||!e.t2||e.state==="pre")continue;
+    nv[_lk(e.t1,e.t2)]={s1:e.s1,s2:e.s2,state:e.state,clock:e.clock,detail:e.detail};
+    nv[_lk(e.t2,e.t1)]={s1:e.s2,s2:e.s1,state:e.state,clock:e.clock,detail:e.detail};}
+  LIVE=nv;
+  return Object.values(LIVE).some(x=>x.state==="in");
+}
+function _lvBadge(lv){if(!lv)return "";
+  if(lv.state==="in")return `<span class="lvb on"><span class="lvdot"></span>EN VIVO ${lv.s1}-${lv.s2}${(lv.clock||lv.detail)?" · "+esc(lv.clock||lv.detail):""}</span>`;
+  if(lv.state==="post")return `<span class="lvb fin">FINAL ${lv.s1}-${lv.s2}</span>`;
+  return "";}
+function pintarLive(){
+  for(const m of GM){const el=document.getElementById("lv_"+m.id);if(el)el.innerHTML=_lvBadge(liveDe(m.t1,m.t2));}
+  const pc=document.getElementById("pill-calendario");
+  if(pc&&pc.getAttribute("aria-selected")==="true")renderCalendario();
+}
+async function _liveTick(){
+  clearTimeout(_liveTimer);
+  if(document.hidden){_liveTimer=setTimeout(_liveTick,60000);return;}
+  const enJuego=await actualizarLive();pintarLive();
+  _liveTimer=setTimeout(_liveTick,enJuego?45000:300000);
+}
+document.addEventListener("visibilitychange",()=>{if(!document.hidden){clearTimeout(_liveTimer);_liveTick();}});
+(function(){const s=document.createElement("style");s.textContent=`
+.live{margin:-1px 0 5px 2px;min-height:0}
+.lvb{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:800;letter-spacing:.3px;padding:2px 7px;border-radius:999px;line-height:1.45}
+.lvb.on{background:rgba(229,16,59,.14);color:#e5103b;border:1px solid rgba(229,16,59,.35)}
+.lvb.fin{background:rgba(120,120,130,.16);color:var(--muted)}
+.lvdot{width:7px;height:7px;border-radius:50%;background:#e5103b;animation:lvpulse 1.1s infinite}
+.res.live{color:#e5103b;font-weight:800}
+.res.live small{font-weight:700;opacity:.85}
+@keyframes lvpulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}`;
+document.head.appendChild(s);})();
+
 /* ============================ INIT ============================ */
 renderTabs();applyTheme();bannerLines();initParallax();
 document.querySelectorAll(".tro").forEach(s=>s.innerHTML=trofeoSVG("mundial",24));
 cargar(false);
+_liveTick();
 </script>
 </body>
 </html>
