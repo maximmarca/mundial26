@@ -358,7 +358,6 @@ select.search{max-width:240px;cursor:pointer}
   <div class="tabpage" id="tab-calendario" role="tabpanel"></div>
   <div class="tabpage" id="tab-terceros" role="tabpanel"></div>
   <div class="tabpage" id="tab-cuadro" role="tabpanel"></div>
-  <div class="tabpage" id="tab-flujo" role="tabpanel"></div>
   <div class="tabpage" id="tab-fifa" role="tabpanel"></div>
   <div class="tabpage" id="tab-stats" role="tabpanel"></div>
 </div>
@@ -604,7 +603,6 @@ function recalcular(){
   resolverCuadro();renderCuadro();
   renderFifa();
   if(document.getElementById("tab-calendario").innerHTML)renderCalendario();
-  if(typeof flowActiva==="function"&&flowActiva()&&!_flowDragging)renderFlujo();
 }
 function restaurar(){RES={...REAL};SCORES={...REAL};KOWIN={...KOREAL};renderGrupos();recalcular();}
 
@@ -800,8 +798,7 @@ function boxHtml(n,x,y){
   return `<div class="${cls}" style="left:${x}px;top:${y}px">
     <div class="cab">#${n} ${META[n]?META[n].fecha:""}</div>${row(t1)}${row(t2)}${_koLive(t1,t2)}</div>`;
 }
-function elegir(n,eq){KOWIN[n]=eq;resolverCuadro();renderCuadro();
-  if(typeof flowActiva==="function"&&flowActiva())renderFlujo();}
+function elegir(n,eq){KOWIN[n]=eq;resolverCuadro();renderCuadro();}
 
 /* ============================ ESTADISTICAS ============================ */
 function goleadores(){
@@ -1161,7 +1158,7 @@ async function bajarFotos(){
 /* ============================ TABS / BANNER ============================ */
 const TABDEF=[["grupos","FASE DE GRUPOS","#1e6bff"],["calendario","CALENDARIO","#8b5cf6"],
   ["terceros","MEJORES TERCEROS","#ee9b00"],["cuadro","CUADRO / ELIMINATORIAS","#00b86b"],
-  ["flujo","FLUJO","#14b8a6"],["fifa","RANKING FIFA","#00b8d4"],["stats","ESTADÍSTICAS","#e5103b"]];
+  ["fifa","RANKING FIFA","#00b8d4"],["stats","ESTADÍSTICAS","#e5103b"]];
 function renderTabs(){
   document.getElementById("tabs").innerHTML=TABDEF.map(([k,t,c],i)=>
     `<button class="pill ${i===0?"active":""}" id="pill-${k}" role="tab" aria-selected="${i===0}"
@@ -1173,7 +1170,6 @@ function tab(k,c){
   const pl=document.getElementById("pill-"+k);pl.classList.add("active");pl.style.background=c;pl.setAttribute("aria-selected","true");
   document.querySelectorAll(".tabpage").forEach(p=>p.classList.remove("show"));
   document.getElementById("tab-"+k).classList.add("show");
-  if(k==="flujo")renderFlujo();
 }
 function bannerLines(){
   const svg=document.getElementById("bannerLines");
@@ -1287,7 +1283,6 @@ function pintarLive(){
   if(pc&&pc.getAttribute("aria-selected")==="true")renderCalendario();
   const pq=document.getElementById("pill-cuadro");
   if(pq&&pq.getAttribute("aria-selected")==="true")renderCuadro();
-  if(flowActiva()&&!_flowDragging)renderFlujo();
 }
 async function _liveTick(){
   clearTimeout(_liveTimer);
@@ -1311,123 +1306,6 @@ document.addEventListener("visibilitychange",()=>{if(!document.hidden){clearTime
 .mov.up{color:#00b86b}.mov.down{color:#e5103b}.mov.eq{color:var(--muted)}
 .mov.sd{color:var(--muted);font-weight:600;font-size:11px;opacity:.7}
 @keyframes lvpulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}`;
-document.head.appendChild(s);})();
-
-/* ============================ FLUJO (vista tipo n8n) ============================ */
-const FLOW_FEED={};for(const k in LLAVES){FLOW_FEED[+k]=LLAVES[k].map(s=>+String(s).replace(/\D/g,""));}
-const FLOW_NODES=[...Array(16)].map((_,i)=>73+i).concat([89,90,91,92,93,94,95,96,97,98,99,100,101,102,104,103]);
-const FLOW_X0=40,FLOW_Y0=30,FLOW_PITCH=232,FLOW_ROWH=74,FNW=156,FNH=56;
-const FROUND={0:"16AVOS",1:"8VOS",2:"4TOS",3:"SEMI",4:"FINAL"};
-const _fyp={};LEAF_ORDER.forEach((n,i)=>_fyp[n]=FLOW_Y0+i*FLOW_ROWH);
-function _fdepth(n){return FLOW_FEED[n]?1+Math.max(...FLOW_FEED[n].map(_fdepth)):0;}
-function _fcy(n){if(n in _fyp)return _fyp[n];return _fyp[n]=FLOW_FEED[n].reduce((s,c)=>s+_fcy(c),0)/FLOW_FEED[n].length;}
-[89,90,91,92,93,94,95,96,97,98,99,100,101,102,104].forEach(_fcy);
-_fyp[103]=_fyp[104]+FLOW_ROWH*1.5;
-const _fxp=n=>FLOW_X0+_fdepth(n)*FLOW_PITCH;
-let FLOW_TF={x:30,y:20,s:1}, FLOW_NPOS={}, _flowInit=false;
-let _flowMode=null,_flowStart=null,_flowNode=null,_flowDragging=false,_flowDocBound=false;
-function fpx(n){return FLOW_NPOS[n]?FLOW_NPOS[n].x:_fxp(n);}
-function fpy(n){return FLOW_NPOS[n]?FLOW_NPOS[n].y:_fyp[n]-FNH/2;}
-function flowActiva(){const p=document.getElementById("pill-flujo");return p&&p.getAttribute("aria-selected")==="true";}
-function flowEdgesSVG(){let p="";
-  for(const n of FLOW_NODES){const ch=FLOW_FEED[n];if(!ch)continue;
-    const x2=fpx(n),y2=fpy(n)+FNH/2;
-    for(const c of ch){const x1=fpx(c)+FNW,y1=fpy(c)+FNH/2;
-      const dx=Math.max(34,Math.abs(x2-x1)*0.5);
-      p+=`<path class="fedge${n===103?' loss':''}" d="M${x1},${y1} C${x1+dx},${y1} ${x2-dx},${y2} ${x2},${y2}"/>`;}}
-  return p;}
-function flowNodeHTML(n){
-  const par=KORES[n]||["",""],t1=par[0],t2=par[1];
-  const gan=KOWIN[n],real=n in KOREAL,fin=n===104,third=n===103;
-  const lv=liveDe(t1,t2);
-  const sc=lv&&lv.state==="in"?`<span class="fsc live">${lv.s1}-${lv.s2}${lv.clock?" "+esc(lv.clock):""}</span>`
-    :(lv&&lv.state==="post"?`<span class="fsc">${lv.s1}-${lv.s2}</span>`:"");
-  const prov=(!real&&!koDefinido(n));
-  const row=eq=>{const w=gan===eq&&eq,clic=eq&&!esEtiqueta(eq);
-    return `<div class="fteam ${w?'win':''} ${clic?'clic':''}" ${clic?`onclick="elegir(${n},'${esc(eq).replace(/'/g,"\\'")}')"`:""}>`+
-      `${flagImg(eq)}<span>${esc(corto(eq,16))||"(por definir)"}</span></div>`;};
-  return `<div class="fnode${fin?' fin':''}${third?' third':''}${prov?' prov':''}" data-n="${n}" style="left:${fpx(n)}px;top:${fpy(n)}px">
-    <div class="fnode-head" data-drag="${n}"><span class="fid">#${n}</span><span class="frnd">${third?"3ER PUESTO":(FROUND[_fdepth(n)]||"")}</span>${sc}</div>
-    ${row(t1)}${row(t2)}</div>`;
-}
-function _flowApplyTF(){const w=document.getElementById("flowWorld");if(w)w.style.transform=`translate(${FLOW_TF.x}px,${FLOW_TF.y}px) scale(${FLOW_TF.s})`;}
-function _flowRedraw(){const n=_flowNode,el=document.querySelector(`.fnode[data-n="${n}"]`);
-  if(el){el.style.left=fpx(n)+"px";el.style.top=fpy(n)+"px";}
-  const svg=document.getElementById("flowSvg");if(svg)svg.innerHTML=flowEdgesSVG();}
-function flowZoom(f){const c=document.getElementById("flowCanvas");if(!c)return;
-  const mx=c.clientWidth/2,my=c.clientHeight/2,ns=Math.min(2.4,Math.max(0.3,FLOW_TF.s*f));
-  FLOW_TF.x=mx-(mx-FLOW_TF.x)*(ns/FLOW_TF.s);FLOW_TF.y=my-(my-FLOW_TF.y)*(ns/FLOW_TF.s);FLOW_TF.s=ns;_flowApplyTF();}
-function _flowFitScale(worldW){const c=document.getElementById("flowCanvas");
-  const cw=c&&c.clientWidth>60?c.clientWidth:820;
-  return Math.max(0.35,Math.min(1.2,(cw-40)/worldW));}
-function flowReset(){FLOW_NPOS={};const worldW=FLOW_X0+4*FLOW_PITCH+FNW+80;
-  FLOW_TF={x:30,y:20,s:_flowFitScale(worldW)};renderFlujo();}
-function _flowBind(){
-  const canvas=document.getElementById("flowCanvas");if(!canvas)return;
-  canvas.onpointerdown=e=>{
-    const head=e.target.closest("[data-drag]");
-    if(head){_flowMode="drag";_flowNode=+head.getAttribute("data-drag");
-      _flowStart={px:e.clientX,py:e.clientY,nx:fpx(_flowNode),ny:fpy(_flowNode)};_flowDragging=true;e.preventDefault();return;}
-    if(e.target.closest(".fteam"))return;
-    _flowMode="pan";_flowStart={px:e.clientX,py:e.clientY,tx:FLOW_TF.x,ty:FLOW_TF.y};e.preventDefault();};
-  canvas.onwheel=e=>{e.preventDefault();const r=canvas.getBoundingClientRect();
-    const mx=e.clientX-r.left,my=e.clientY-r.top,ns=Math.min(2.4,Math.max(0.3,FLOW_TF.s*(e.deltaY<0?1.1:1/1.1)));
-    FLOW_TF.x=mx-(mx-FLOW_TF.x)*(ns/FLOW_TF.s);FLOW_TF.y=my-(my-FLOW_TF.y)*(ns/FLOW_TF.s);FLOW_TF.s=ns;_flowApplyTF();};
-  if(!_flowDocBound){_flowDocBound=true;
-    document.addEventListener("pointermove",e=>{
-      if(_flowMode==="pan"){FLOW_TF.x=_flowStart.tx+(e.clientX-_flowStart.px);FLOW_TF.y=_flowStart.ty+(e.clientY-_flowStart.py);_flowApplyTF();}
-      else if(_flowMode==="drag"&&_flowNode!=null){
-        FLOW_NPOS[_flowNode]={x:_flowStart.nx+(e.clientX-_flowStart.px)/FLOW_TF.s,y:_flowStart.ny+(e.clientY-_flowStart.py)/FLOW_TF.s};_flowRedraw();}});
-    document.addEventListener("pointerup",()=>{_flowMode=null;_flowNode=null;setTimeout(()=>{_flowDragging=false;},60);});}
-}
-function renderFlujo(){
-  const cont=document.getElementById("tab-flujo");if(!cont)return;
-  const worldW=FLOW_X0+4*FLOW_PITCH+FNW+80;
-  const worldH=Math.max(...FLOW_NODES.map(n=>fpy(n)))+FNH+80;
-  const nodes=FLOW_NODES.map(flowNodeHTML).join("");
-  cont.innerHTML=`<div class="panel"><div class="acc" style="background:#14b8a6"></div>
-    <h2>FLUJO · ELIMINATORIA</h2>
-    <div class="psub">Lienzo tipo n8n · arrastrá el nodo por su cabecera · rueda o botones = zoom · arrastrá el fondo para mover · tocá un equipo para hacerlo ganar</div>
-    <div class="pbody"><div class="flow-wrap">
-      <div class="flow-toolbar"><button onclick="flowZoom(1.15)" title="Acercar">+</button><button onclick="flowZoom(.87)" title="Alejar">−</button><button onclick="flowReset()" title="Reordenar">⟳</button></div>
-      <div class="flow-canvas" id="flowCanvas"><div class="flow-world" id="flowWorld" style="width:${worldW}px;height:${worldH}px">
-        <svg id="flowSvg" width="${worldW}" height="${worldH}">${flowEdgesSVG()}</svg>${nodes}
-      </div></div></div></div></div>`;
-  if(!_flowInit){_flowInit=true;FLOW_TF.s=_flowFitScale(worldW);}
-  _flowApplyTF();_flowBind();
-}
-(function(){const s=document.createElement("style");s.textContent=`
-.flow-wrap{position:relative}
-.flow-canvas{position:relative;width:100%;height:76vh;min-height:420px;overflow:hidden;border-radius:14px;
-  background:#0b1020;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px;
-  cursor:grab;touch-action:none;border:1px solid var(--line2)}
-.flow-canvas:active{cursor:grabbing}
-.flow-world{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform}
-.flow-world svg{position:absolute;top:0;left:0;overflow:visible;pointer-events:none}
-.fedge{fill:none;stroke:#3a6df0;stroke-width:2.4;opacity:.85}
-.fedge.loss{stroke:#7a8194;stroke-dasharray:5 5;opacity:.5}
-.fnode{position:absolute;width:156px;background:#171d31;border:1px solid #2a3552;border-radius:12px;
-  box-shadow:0 8px 22px rgba(0,0,0,.45);overflow:hidden;font-size:12px;color:#e8edfb}
-.fnode.fin{border-color:#e8b923;box-shadow:0 0 0 2px rgba(232,185,35,.25),0 8px 22px rgba(0,0,0,.5)}
-.fnode.third{border-color:#c47b2b}
-.fnode.prov{opacity:.82;border-style:dashed}
-.fnode::before,.fnode::after{content:"";position:absolute;top:calc(50% + 9px);width:8px;height:8px;border-radius:50%;background:#3a6df0;transform:translateY(-50%)}
-.fnode::before{left:-5px}.fnode::after{right:-5px}
-.fnode-head{display:flex;align-items:center;gap:6px;padding:5px 8px;background:#202a45;cursor:grab;
-  border-bottom:1px solid #2a3552;font-size:10px;font-weight:800;letter-spacing:.3px;color:#9fb0d6}
-.fnode-head:active{cursor:grabbing}
-.fnode-head .fid{color:#6f80a8}
-.fnode-head .frnd{margin-left:auto;color:#8b9bc4}
-.fnode-head .fsc{margin-left:6px;color:#cbd6f5;font-weight:800}
-.fnode-head .fsc.live{color:#ff5470}
-.fteam{display:flex;align-items:center;gap:6px;padding:6px 8px;border-top:1px solid rgba(255,255,255,.05)}
-.fteam .flag{flex:0 0 auto}
-.fteam span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.fteam.clic{cursor:pointer}.fteam.clic:hover{background:#1e2742}
-.fteam.win{background:rgba(0,184,107,.18);font-weight:800}
-.flow-toolbar{position:absolute;right:14px;top:14px;z-index:6;display:flex;gap:6px}
-.flow-toolbar button{width:32px;height:32px;border-radius:8px;border:1px solid #2a3552;background:#202a45;color:#cbd6f5;font-size:16px;font-weight:800;cursor:pointer}
-.flow-toolbar button:hover{background:#2a3552}`;
 document.head.appendChild(s);})();
 
 /* ============================ INIT ============================ */
