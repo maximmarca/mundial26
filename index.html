@@ -390,13 +390,21 @@ const ISO={"Algeria":"dz","Argentina":"ar","Australia":"au","Austria":"at","Belg
 "Saudi Arabia":"sa","Scotland":"gb-sct","Senegal":"sn","South Africa":"za","South Korea":"kr",
 "Spain":"es","Sweden":"se","Switzerland":"ch","Tunisia":"tn","Turkey":"tr","USA":"us",
 "Uruguay":"uy","Uzbekistan":"uz"};
-const RANKING_FIFA={"Argentina":1,"Spain":2,"France":3,"England":4,"Portugal":5,"Brazil":6,
-"Morocco":7,"Netherlands":8,"Belgium":9,"Germany":10,"Croatia":11,"Colombia":13,"Mexico":14,
-"Senegal":15,"Uruguay":16,"USA":17,"Japan":18,"Switzerland":19,"Iran":20,"Turkey":22,"Ecuador":23,
-"Austria":24,"South Korea":25,"Australia":27,"Algeria":28,"Egypt":29,"Canada":30,"Norway":31,
-"Ivory Coast":33,"Panama":34,"Sweden":38,"Czech Republic":40,"Paraguay":41,"Scotland":42,
-"Tunisia":45,"DR Congo":46,"Uzbekistan":50,"Qatar":56,"Iraq":57,"South Africa":60,"Saudi Arabia":61,
+/* Ranking oficial FIFA 20/07/2026 (top-50 desde football-ranking.com). Equipos fuera del top-50
+   conservan su posicion aprox. del 11/06/2026 (sin dato de movimiento). */
+const RANKING_FIFA={"France":1,"Argentina":2,"Spain":3,"England":4,"Brazil":5,"Morocco":6,
+"Netherlands":7,"Portugal":8,"Mexico":9,"Belgium":10,"Colombia":11,"Germany":12,"Croatia":13,
+"USA":15,"Switzerland":16,"Japan":17,"Senegal":18,"Uruguay":19,"Iran":21,"Austria":22,"Norway":23,
+"Ecuador":24,"Egypt":26,"Turkey":27,"Australia":28,"Algeria":29,"Ivory Coast":30,"South Korea":31,
+"Canada":32,"Sweden":36,"Paraguay":37,"Scotland":41,"Panama":42,"DR Congo":46,"Czech Republic":48,
+"Tunisia":45,"Uzbekistan":50,"Qatar":56,"Iraq":57,"South Africa":60,"Saudi Arabia":61,
 "Jordan":63,"Bosnia & Herzegovina":64,"Cape Verde":67,"Ghana":73,"Curaçao":82,"Haiti":83,"New Zealand":85};
+/* MOV = cambio de posicion vs edicion 11/06/2026 (+ sube, - baja). Sin clave = sin dato (s/d). */
+const RANKING_MOV={"France":2,"Argentina":-1,"Spain":-1,"England":0,"Brazil":1,"Morocco":1,
+"Netherlands":1,"Portugal":-3,"Mexico":5,"Belgium":-1,"Colombia":2,"Germany":-2,"Croatia":-2,
+"USA":2,"Switzerland":3,"Japan":1,"Senegal":-3,"Uruguay":-3,"Iran":-1,"Austria":2,"Norway":8,
+"Ecuador":-1,"Egypt":3,"Turkey":-5,"Australia":-1,"Algeria":-1,"Ivory Coast":3,"South Korea":-6,
+"Canada":-2,"Sweden":2,"Paraguay":4,"Scotland":1,"Panama":-8,"DR Congo":0,"Czech Republic":-8};
 /* [confederacion, titulos mundiales, finales jugadas, participaciones (incl. 2026)] — historico aprox. */
 const CONFEDS=["UEFA","CONMEBOL","CONCACAF","CAF","AFC","OFC"];
 const TEAMINFO={
@@ -677,10 +685,11 @@ function renderTerceros(rank){
     const cls=i<8?"ok":"no";let est=i<8?"CLASIFICA":"eliminado";
     const slot=Object.entries(MAPA3).find(([s,g])=>g===L);
     if(i<8&&slot)est="→ partido "+slot[0];
+    const prov=(i<8&&!_allGrpReal())?` <span class="tag-prov">por confirmar</span>`:"";
     return `<tr class="${cls}"><td>${i+1}. ${flagImg(e.eq)} ${esc(corto(e.eq,20))} (${L})</td>
       <td class="center">${e.pj}</td><td class="center">${e.dg>=0?"+":""}${e.dg}</td>
       <td class="center">${e.gf}</td><td class="center"><b>${e.pts}</b></td>
-      <td class="center">${est}</td></tr>`;}).join("");
+      <td class="center">${est}${prov}</td></tr>`;}).join("");
   document.getElementById("tab-terceros").innerHTML=`<div class="panel narrow">
     <div class="acc" style="background:var(--gold)"></div>
     <h2>RANKING DE TERCEROS — LOS 8 MEJORES CLASIFICAN</h2>
@@ -690,6 +699,11 @@ function renderTerceros(rank){
 }
 
 /* ============================ RENDER CUADRO ============================ */
+/* marcador en vivo de un cruce de eliminatoria (desde ESPN) */
+function _koLive(t1,t2){const lv=liveDe(t1,t2);if(!lv)return "";
+  if(lv.state==="in")return `<div class="kosc live">${lv.s1} - ${lv.s2}${lv.clock?" · "+esc(lv.clock):""}</div>`;
+  if(lv.state==="post")return `<div class="kosc">${lv.s1} - ${lv.s2}</div>`;
+  return "";}
 const LEFT_LEAF=[73,75,74,77,83,84,81,82], RIGHT_LEAF=[76,78,79,80,86,88,85,87];
 const LEFT_SET=new Set([...LEFT_LEAF,89,90,93,94,97,98,101]);
 function mboxmHTML(n){
@@ -699,7 +713,7 @@ function mboxmHTML(n){
     return `<div class="rowm ${w?'win':''} ${clic?'clic':''}" ${clic?`onclick="elegir(${n},'${esc(eq).replace(/'/g,"\\'")}')"`:""}>`+
       `${flagImg(eq)}<span>${esc(corto(eq,20))||"(por definir)"}</span></div>`;};
   const prov=(!real&&!koDefinido(n))?" prov":"";
-  return `<div class="mboxm ${fin?'final':(real?'real':'')}${prov}"><div class="cab">#${n} ${META[n]?META[n].fecha:""}${prov?' · por confirmar':''}</div>${row(t1)}${row(t2)}</div>`;
+  return `<div class="mboxm ${fin?'final':(real?'real':'')}${prov}"><div class="cab">#${n} ${META[n]?META[n].fecha:""}${prov?' · por confirmar':''}</div>${row(t1)}${row(t2)}${_koLive(t1,t2)}</div>`;
 }
 function renderCuadroMobile(){
   const RM=[["DIECISEISAVOS",Array.from({length:16},(_,i)=>73+i)],["OCTAVOS",[89,90,91,92,93,94,95,96]],
@@ -782,7 +796,7 @@ function boxHtml(n,x,y){
     return `<div class="row ${w?"win":""} ${clic?"clic":""}" ${clic?`onclick="elegir(${n},'${esc(eq).replace(/'/g,"\\'")}')"`:""}>
       ${flagImg(eq)}<span>${esc(corto(eq,16))||"(por definir)"}</span></div>`;};
   return `<div class="${cls}" style="left:${x}px;top:${y}px">
-    <div class="cab">#${n} ${META[n]?META[n].fecha:""}</div>${row(t1)}${row(t2)}</div>`;
+    <div class="cab">#${n} ${META[n]?META[n].fecha:""}</div>${row(t1)}${row(t2)}${_koLive(t1,t2)}</div>`;
 }
 function elegir(n,eq){KOWIN[n]=eq;resolverCuadro();renderCuadro();}
 
@@ -951,6 +965,11 @@ function setFifaFilter(c){ FFILTER=c; renderFifa(); }
 function setFifaQuery(v){ FQ=v; const b=document.getElementById("fifaBody"); if(b)b.innerHTML=fifaRowsHTML(); }
 const _inf=t=>TEAMINFO[t]||["?",0,0,0];
 function _mejor(t){const i=_inf(t);return i[1]>0?("Campeón"+(i[1]>1?" ×"+i[1]:"")):(i[2]>0?"Finalista":"–");}
+function _movHtml(t){const m=RANKING_MOV[t];
+  if(m===undefined)return `<span class="mov sd" title="sin dato de movimiento (fuera del top-50)">s/d</span>`;
+  if(m>0)return `<span class="mov up">▲${m}</span>`;
+  if(m<0)return `<span class="mov down">▼${-m}</span>`;
+  return `<span class="mov eq">=</span>`;}
 function fifaRowsHTML(){
   const ST=statsTorneo();
   let eqs=[...new Set(GM.flatMap(m=>[m.t1,m.t2]))];
@@ -965,6 +984,7 @@ function fifaRowsHTML(){
   eqs.sort((a,b)=>{let v=cmp(a,b)*FDIR; if(v===0)v=(RANKING_FIFA[a]||999)-(RANKING_FIFA[b]||999); return v;});
   return eqs.map(t=>{const i=_inf(t);
     return `<tr><td><span class="rkpos">${RANKING_FIFA[t]||"-"}</span>${flagImg(t)}${esc(t)}</td>
+      <td class="center">${_movHtml(t)}</td>
       <td class="center">${i[0]}</td><td class="center">${i[3]}</td>
       <td class="center" title="Finales jugadas: ${i[2]}">${i[1]?("🏆 "+i[1]):"–"}</td>
       <td>${esc(_mejor(t))}</td><td>${formaHtml(ST[t])}</td></tr>`;}).join("");
@@ -978,13 +998,14 @@ function renderFifa(){
   document.getElementById("tab-fifa").innerHTML=`<div class="panel">
     <div class="acc" style="background:var(--cyan)"></div>
     <h2>RANKING FIFA</h2>
-    <div class="psub">Ranking 11/06/2026 · históricos aprox. · forma = Mundial 2026 (clic en encabezados para ordenar)</div>
+    <div class="psub">Ranking oficial 20/07/2026 · MOV = cambio vs 11/06/2026 (fuente: football-ranking.com) · fuera del top-50 sin dato (s/d) · forma = Mundial 2026</div>
     <div class="pbody">
       <div class="champrow">CAMPEONES: ${podio}</div>
       <input class="search" placeholder="Buscar selección…" value="${esc(FQ)}" oninput="setFifaQuery(this.value)">
       ${fbar}
       <div class="ftwrap"><table class="rank"><thead><tr>
       <th class="sortable" onclick="setFifaSort('fifa')">SELECCIÓN${arrow('fifa')}</th>
+      <th class="center">MOV</th>
       <th class="center">CONF</th>
       <th class="center sortable" onclick="setFifaSort('mun')">MUN${arrow('mun')}</th>
       <th class="center sortable" onclick="setFifaSort('tit')">🏆${arrow('tit')}</th>
@@ -1260,6 +1281,8 @@ function pintarLive(){
   if(aplicarLiveAInputs())recalcular();
   const pc=document.getElementById("pill-calendario");
   if(pc&&pc.getAttribute("aria-selected")==="true")renderCalendario();
+  const pq=document.getElementById("pill-cuadro");
+  if(pq&&pq.getAttribute("aria-selected")==="true")renderCuadro();
 }
 async function _liveTick(){
   clearTimeout(_liveTimer);
@@ -1277,6 +1300,11 @@ document.addEventListener("visibilitychange",()=>{if(!document.hidden){clearTime
 .res.live{color:#e5103b;font-weight:800}
 .res.live small{font-weight:700;opacity:.85}
 .mrow input.livein{color:#e5103b;font-weight:800;border-color:rgba(229,16,59,.45)}
+.kosc{font-size:11px;font-weight:800;text-align:center;color:var(--muted);margin-top:2px}
+.kosc.live{color:#e5103b}
+.mov{font-weight:800;font-size:12px}
+.mov.up{color:#00b86b}.mov.down{color:#e5103b}.mov.eq{color:var(--muted)}
+.mov.sd{color:var(--muted);font-weight:600;font-size:11px;opacity:.7}
 @keyframes lvpulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}`;
 document.head.appendChild(s);})();
 
