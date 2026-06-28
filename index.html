@@ -468,6 +468,7 @@ async function cargar(forzar){
   DATA=data;parse();SCORES={...REAL};KOWIN={...KOREAL};
   setStatus(`${GM.length} partidos de grupo`);
   renderGrupos();recalcular();renderStats();renderCalendario();
+  aplicarHashCuadro();
   bajarFotos();
 }
 async function actualizar(){
@@ -730,7 +731,7 @@ function renderCuadroMobile(){
   for(const[nm,nums]of RM)
     h+=`<details class="acc-round" open><summary>${nm}</summary>${nums.map(mboxmHTML).join("")}</details>`;
   document.getElementById("tab-cuadro").innerHTML=`<div class="panel"><div class="acc" style="background:var(--green)"></div>
-    <h2>CUADRO</h2><div class="psub">Tocá un equipo para hacerlo ganar</div><div class="pbody">${h}</div></div>`;
+    <h2>CUADRO</h2><div class="psub">Tocá un equipo para hacerlo ganar</div>${cuadroToolbar()}<div class="pbody">${h}</div></div>`;
 }
 function renderCuadro(){
   if(window.innerWidth<=640)return renderCuadroMobile();
@@ -783,7 +784,7 @@ function renderCuadro(){
   const sc=document.getElementById("tab-cuadro");
   const prev=sc.querySelector(".bracket-scroll");
   const sx=prev?prev.scrollLeft:0, sy=prev?prev.scrollTop:0;
-  sc.innerHTML=`<div class="bracket-scroll" style="max-height:75vh">
+  sc.innerHTML=`${cuadroToolbar()}<div class="bracket-scroll" style="max-height:75vh">
     <div class="bracket" style="width:${totalW}px;height:${totalH}px">
     <svg width="${totalW}" height="${totalH}">${svg}</svg>${boxes}</div></div>`;
   const ns=sc.querySelector(".bracket-scroll");ns.scrollLeft=sx;ns.scrollTop=sy;
@@ -1306,6 +1307,92 @@ document.addEventListener("visibilitychange",()=>{if(!document.hidden){clearTime
 .mov.up{color:#00b86b}.mov.down{color:#e5103b}.mov.eq{color:var(--muted)}
 .mov.sd{color:var(--muted);font-weight:600;font-size:11px;opacity:.7}
 @keyframes lvpulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}`;
+document.head.appendChild(s);})();
+
+/* ============================ COMPARTIR CUADRO ============================ */
+const KO_ALL=[...Array(16)].map((_,i)=>73+i).concat([89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104]);
+function _b64u(s){return btoa(unescape(encodeURIComponent(s))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");}
+function _ub64(s){s=s.replace(/-/g,"+").replace(/_/g,"/");while(s.length%4)s+="=";return decodeURIComponent(escape(atob(s)));}
+function exportCuadro(){
+  const gs=GM.map(m=>RES[m.id]?(RES[m.id][0]+"-"+RES[m.id][1]):"").join(".").replace(/\.+$/,"");
+  const kw=KO_ALL.map(n=>{const w=KOWIN[n],p=KORES[n];if(!w||!p)return "0";return p[0]===w?"1":(p[1]===w?"2":"0");}).join("");
+  return "1~"+gs+"~"+kw;
+}
+function shareLink(){return location.origin+location.pathname+"#c="+_b64u(exportCuadro());}
+function importCuadro(code){
+  try{
+    const dec=_ub64(code),parts=dec.split("~");if(parts[0]!=="1")return false;
+    const arr=(parts[1]||"").split("."),kw=parts[2]||"";
+    GM.forEach((m,i)=>{const v=arr[i],i1=document.getElementById("s_"+m.id+"_1"),i2=document.getElementById("s_"+m.id+"_2");
+      if(v&&/^\d+-\d+$/.test(v)){const ab=v.split("-");RES[m.id]=[+ab[0],+ab[1]];if(i1&&i2){i1.value=+ab[0];i2.value=+ab[1];}}});
+    recalcular();
+    KO_ALL.forEach((n,i)=>{const s=kw[i];if(s==="1"||s==="2"){const p=KORES[n];if(p){const w=p[+s-1];if(w&&!esEtiqueta(w))KOWIN[n]=w;}resolverCuadro();}});
+    resolverCuadro();recalcular();
+    return true;
+  }catch(e){return false;}
+}
+function aplicarHashCuadro(){const m=/[#&]c=([A-Za-z0-9\-_]+)/.exec(location.hash||"");
+  if(m&&importCuadro(m[1])){setStatus("Cuadro compartido cargado");if(typeof tab==="function")tab("cuadro","#00b86b");}}
+function toast(msg){let t=document.getElementById("toast");
+  if(!t){t=document.createElement("div");t.id="toast";document.body.appendChild(t);}
+  t.textContent=msg;t.classList.add("show");clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),2600);}
+async function compartirLink(){const url=shareLink();
+  if(navigator.share){try{await navigator.share({title:"Mi cuadro · Mundial 2026",text:"Mirá mi cuadro del Mundial 2026",url});return;}catch(e){if(e&&e.name==="AbortError")return;}}
+  try{await navigator.clipboard.writeText(url);toast("Link copiado ✓");}catch(e){prompt("Copiá el link:",url);}
+}
+function cuadroToolbar(){return `<div class="cuadro-tools">
+  <button class="ctbtn" onclick="compartirLink()">🔗 Compartir</button>
+  <button class="ctbtn" onclick="exportarImagen()">🖼️ Imagen</button></div>`;}
+/* ---- imagen PNG (SVG propio -> canvas, sin imagenes remotas = sin CORS) ---- */
+const _IF={};for(const k in LLAVES){_IF[+k]=LLAVES[k].map(s=>+String(s).replace(/\D/g,""));}
+const SNW=152,SNH=46,SROW=58,SCOL=205,SX0=24,SY0=70;
+const _siy={};LEAF_ORDER.forEach((n,i)=>_siy[n]=SY0+i*SROW+SNH/2);
+function _sdep(n){return _IF[n]?1+Math.max(..._IF[n].map(_sdep)):0;}
+function _scy(n){if(n in _siy)return _siy[n];return _siy[n]=_IF[n].reduce((s,c)=>s+_scy(c),0)/_IF[n].length;}
+[89,90,91,92,93,94,95,96,97,98,99,100,101,102,104].forEach(_scy);
+_siy[103]=_siy[104]+SROW*1.4;
+const _sx=n=>SX0+_sdep(n)*SCOL;
+function buildBracketSVG(){
+  const xe=s=>(s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const W=SX0+4*SCOL+SNW+230, H=Math.max(...Object.values(_siy))+SNH+34;
+  let s='<svg xmlns="http://www.w3.org/2000/svg" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" font-family="Arial,Helvetica,sans-serif">';
+  s+='<rect width="'+W+'" height="'+H+'" fill="#0b1020"/>';
+  s+='<text x="'+SX0+'" y="32" fill="#ffffff" font-size="22" font-weight="bold">Mundial 2026 · Mi cuadro</text>';
+  s+='<text x="'+SX0+'" y="50" fill="#8b9bc4" font-size="12">maximmarca.github.io/mundial26</text>';
+  ["16AVOS","8VOS","4TOS","SEMIS","FINAL"].forEach((t,c)=>{s+='<text x="'+(SX0+c*SCOL)+'" y="'+(SY0-12)+'" fill="#9fb0d6" font-size="11" font-weight="bold">'+t+'</text>';});
+  for(const n of KO_ALL){const ch=_IF[n];if(!ch)continue;const x2=_sx(n),y2=_siy[n];
+    for(const c of ch){const x1=_sx(c)+SNW,y1=_siy[c],mx=(x1+x2)/2;
+      s+='<path d="M'+x1+','+y1+' C'+mx+','+y1+' '+mx+','+y2+' '+x2+','+y2+'" fill="none" stroke="'+(n===103?'#7a8194':'#3a6df0')+'" stroke-width="1.6"'+(n===103?' stroke-dasharray="4 4"':'')+' opacity="0.7"/>';}}
+  for(const n of KO_ALL){const par=KORES[n]||["",""],x=_sx(n),y=_siy[n]-SNH/2,gan=KOWIN[n],fin=n===104,third=n===103;
+    s+='<rect x="'+x+'" y="'+y+'" width="'+SNW+'" height="'+SNH+'" rx="7" fill="#171d31" stroke="'+(fin?'#e8b923':(third?'#c47b2b':'#2a3552'))+'" stroke-width="'+(fin?2:1)+'"/>';
+    s+='<text x="'+(x+7)+'" y="'+(y+12)+'" fill="#6f80a8" font-size="8" font-weight="bold">#'+n+(third?' · 3ER PUESTO':'')+'</text>';
+    [par[0],par[1]].forEach((eq,k)=>{const ty=y+24+k*15,win=gan&&gan===eq;
+      if(win)s+='<rect x="'+(x+2)+'" y="'+(ty-11)+'" width="'+(SNW-4)+'" height="15" rx="4" fill="#0e7a47"/>';
+      s+='<text x="'+(x+8)+'" y="'+ty+'" fill="'+(win?'#ffffff':'#e8edfb')+'" font-size="11" font-weight="'+(win?'bold':'normal')+'">'+xe(corto(eq,18)||"(por definir)")+'</text>';});}
+  const champ=KOWIN[104];
+  if(champ&&!esEtiqueta(champ)){const cx=_sx(104)+SNW+22,cy=_siy[104];
+    s+='<text x="'+cx+'" y="'+(cy-8)+'" fill="#e8b923" font-size="12" font-weight="bold">CAMPEON</text>';
+    s+='<text x="'+cx+'" y="'+(cy+14)+'" fill="#ffffff" font-size="17" font-weight="bold">🏆 '+xe(corto(champ,16))+'</text>';}
+  return {svg:s+'</svg>',w:W,h:H};
+}
+function exportarImagen(){
+  const o=buildBracketSVG(),img=new Image(),blob=new Blob([o.svg],{type:"image/svg+xml;charset=utf-8"}),url=URL.createObjectURL(blob);
+  img.onload=()=>{const sc=2,cv=document.createElement("canvas");cv.width=o.w*sc;cv.height=o.h*sc;
+    const ctx=cv.getContext("2d");ctx.scale(sc,sc);ctx.drawImage(img,0,0);URL.revokeObjectURL(url);
+    cv.toBlob(async b=>{if(!b){toast("No se pudo generar la imagen");return;}
+      const file=new File([b],"cuadro-mundial2026.png",{type:"image/png"});
+      if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:"Mi cuadro · Mundial 2026"});return;}catch(e){if(e&&e.name==="AbortError")return;}}
+      const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=file.name;document.body.appendChild(a);a.click();a.remove();
+      setTimeout(()=>URL.revokeObjectURL(a.href),4000);toast("Imagen descargada ✓");},"image/png");};
+  img.onerror=()=>{URL.revokeObjectURL(url);toast("No se pudo generar la imagen");};
+  img.src=url;
+}
+(function(){const s=document.createElement("style");s.textContent=`
+.cuadro-tools{display:flex;gap:8px;margin:0 0 10px;flex-wrap:wrap}
+.ctbtn{border:1px solid var(--line2);background:var(--pill-bg);color:inherit;border-radius:10px;padding:7px 12px;font-weight:800;font-size:13px;cursor:pointer}
+.ctbtn:hover{background:var(--hover)}
+#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:#171d31;color:#fff;border:1px solid #2a3552;padding:10px 16px;border-radius:12px;font-weight:700;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:.25s;z-index:9999}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}`;
 document.head.appendChild(s);})();
 
 /* ============================ INIT ============================ */
