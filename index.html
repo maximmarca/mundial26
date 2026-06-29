@@ -470,9 +470,11 @@ const DEF_THEME={pri:"#3a567a",sec:"#ffffff",acc:"#2ba4ff",dark:"#152238",pat:"d
 let DATA=null, GM=[], META={}, SCORES={}, REAL={}, KOWIN={}, KOREAL={}, RES={};
 let TABLAS={}, MAPA3={}, KORES={}, ESTILO="spotlight", FLIP={}, PHOTOS={};
 let FSORT="fifa", FDIR=1, FFILTER="all", FQ="", CALFILT="all", CALTEAM="all";
-/* asistencias y tarjetas (fuente: ESPN, gratis, sin key, CORS *) */
-const ESPN_LEADERS="https://sports.core.api.espn.com/v2/sports/soccer/leagues/fifa.world/seasons/2026/types/1/leaders";
-let ASIST=[], TARJ_A=[], TARJ_R=[], ESPN_NAMES={}, STAB="resumen";
+/* asistencias y tarjetas (fuente: ESPN, gratis, sin key, CORS *) — conteo COMPLETO partido x partido */
+const ESPN_EVENTS="https://sports.core.api.espn.com/v2/sports/soccer/leagues/fifa.world/seasons/2026/types/1/events?limit=300";
+const espnSummary=id=>`https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/summary?event=${id}`;
+const ESPN_TEAM_ALIAS={"Bosnia-Herzegovina":"Bosnia & Herzegovina","Congo DR":"DR Congo","Czechia":"Czech Republic","Türkiye":"Turkey","United States":"USA"};
+let ASIST=[], TARJ_A=[], TARJ_R=[], AGG={}, STAB="resumen";
 
 /* ============================ UTILS ============================ */
 const flagUrl=t=>ISO[t]?`https://flagcdn.com/w40/${ISO[t]}.png`:"";
@@ -1248,25 +1250,40 @@ async function bajarFotos(){
 }
 
 /* ---- asistencias y tarjetas desde ESPN (gratis, sin key, CORS *) ---- */
+function aggToRankings(){
+  const flagOf=tm=>{const n=ESPN_TEAM_ALIAS[tm]||tm;return ISO[n]?flagUrl(n):"";};
+  const tally=key=>{const m={};
+    for(const id in AGG)for(const[pl,tm]of (AGG[id][key]||[])){const k=pl+"|"+tm;
+      if(!m[k])m[k]={n:pl,tm,v:0};m[k].v++;}
+    return Object.values(m).map(o=>({...o,fl:flagOf(o.tm)})).sort((x,y)=>y.v-x.v||x.n.localeCompare(y.n));};
+  ASIST=tally("a");TARJ_A=tally("y");TARJ_R=tally("r");
+}
 async function bajarEspnStats(){
-  try{const c=localStorage.getItem("wc26espn");if(c)ESPN_NAMES={...JSON.parse(c),...ESPN_NAMES};}catch(e){}
-  let cats;
-  try{const d=await (await fetch(ESPN_LEADERS)).json();cats=d.categories||[];}catch(e){return;}
-  const pick=n=>{const c=cats.find(c=>c.name===n);return c?(c.leaders||[]):[];};
-  const topA=pick("assistsLeaders").length?pick("assistsLeaders"):pick("assists");
-  const lead={A:topA.slice(0,15),Y:pick("yellowCards").slice(0,15),R:pick("redCards").slice(0,10)};
-  const idOf=l=>{const r=((l.athlete||{}).$ref)||"";const m=/athletes\/(\d+)/.exec(r);return m?m[1]:null;};
-  const need=new Set();
-  for(const arr of Object.values(lead))for(const l of arr){const id=idOf(l);if(id&&!(ESPN_NAMES[id]&&ESPN_NAMES[id].n))need.add(id);}
-  await Promise.all([...need].map(async id=>{
-    try{const u=`https://sports.core.api.espn.com/v2/sports/soccer/leagues/fifa.world/seasons/2026/athletes/${id}?lang=en&region=us`;
-      const a=await (await fetch(u)).json();
-      ESPN_NAMES[id]={n:a.displayName||a.fullName||("#"+id),fl:(a.flag||{}).href||"",tm:a.citizenship||(a.flag||{}).alt||""};}catch(e){}
-  }));
-  try{localStorage.setItem("wc26espn",JSON.stringify(ESPN_NAMES));}catch(e){}
-  const build=arr=>arr.map(l=>{const id=idOf(l),e=ESPN_NAMES[id];return e&&e.n?{n:e.n,v:l.value,fl:e.fl,tm:e.tm}:null;}).filter(Boolean);
-  ASIST=build(lead.A);TARJ_A=build(lead.Y);TARJ_R=build(lead.R);
-  renderStats();
+  try{const c=localStorage.getItem("wc26agg");if(c)AGG={...JSON.parse(c),...AGG};}catch(e){}
+  aggToRankings();renderStats();
+  let items;
+  try{const d=await (await fetch(ESPN_EVENTS)).json();items=d.items||[];}catch(e){return;}
+  const ids=items.map(i=>{const m=/events\/(\d+)/.exec(i["$ref"]||"");return m?m[1]:null;}).filter(Boolean);
+  const faltan=ids.filter(id=>!AGG[id]);
+  for(let i=0;i<faltan.length;i+=10){
+    const lote=faltan.slice(i,i+10);
+    await Promise.all(lote.map(async id=>{
+      try{const j=await (await fetch(espnSummary(id))).json();
+        const comp=((j.header||{}).competitions||[])[0]||{};
+        if(!(((comp.status||{}).type||{}).completed))return;   // partido no jugado: no cachear
+        const a=[],y=[],r=[];
+        for(const k of (j.keyEvents||[])){const tx=(k.type||{}).text||"";const ps=k.participants||[];const tm=(k.team||{}).displayName||"";
+          if(tx.includes("Goal")){const as=ps[1]&&(ps[1].athlete||{}).displayName;if(as)a.push([as,tm]);}
+          else if(tx.includes("Red")){const pl=ps[0]&&(ps[0].athlete||{}).displayName;if(pl)r.push([pl,tm]);}
+          else if(tx.includes("Yellow")){const pl=ps[0]&&(ps[0].athlete||{}).displayName;if(pl)y.push([pl,tm]);}
+        }
+        AGG[id]={a,y,r};
+      }catch(e){}
+    }));
+    aggToRankings();renderStats();
+  }
+  try{localStorage.setItem("wc26agg",JSON.stringify(AGG));}catch(e){}
+  aggToRankings();renderStats();
 }
 
 /* ============================ TABS / BANNER ============================ */
