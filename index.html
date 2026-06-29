@@ -82,6 +82,7 @@ button{font-family:inherit;cursor:pointer}
 .btn{border:0;border-radius:10px;padding:10px 16px;color:#fff;font-weight:bold;font-size:13px;
   transition:all .15s ease;box-shadow:var(--shadow-sm)}
 .btn.blue{background:var(--blue)} .btn.green{background:var(--green)} .btn.sim{background:#8b5cf6}
+.btn.install{background:linear-gradient(135deg,#00b86b,#00b8d4)}
 .btn.ghost{background:var(--panel-bg);color:var(--text);border:1px solid var(--line)}
 .btn:hover{filter:brightness(.97);transform:translateY(-1px);box-shadow:var(--shadow)}
 .btn:active{transform:translateY(0)}
@@ -355,6 +356,7 @@ select.search{max-width:240px;cursor:pointer}
 
 <div class="toolbar">
   <button class="btn blue" onclick="actualizar()">ACTUALIZAR</button>
+  <button class="btn install" id="btnInstall" onclick="instalarApp()">📥 INSTALAR APP</button>
   <span class="simacts" id="simacts" hidden>
     <button class="btn green" onclick="recalcular()">RECALCULAR</button>
     <button class="btn sim" onclick="simularTodo()">⚽ SIMULAR TODO</button>
@@ -1338,6 +1340,19 @@ function initParallax(){
     if(ti)ti.style.transform="";if(ln)ln.style.transform="";});
 }
 if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}
+/* ---- instalar app (PWA) ---- */
+let deferredPrompt=null;
+const appInstalada=()=>(window.matchMedia&&window.matchMedia("(display-mode: standalone)").matches)||navigator.standalone===true;
+function actualizarBotonInstalar(){const b=document.getElementById("btnInstall");if(b)b.style.display=appInstalada()?"none":"";}
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;actualizarBotonInstalar();});
+window.addEventListener("appinstalled",()=>{deferredPrompt=null;const b=document.getElementById("btnInstall");if(b)b.style.display="none";toast("App instalada ✓");});
+async function instalarApp(){
+  if(deferredPrompt){deferredPrompt.prompt();try{await deferredPrompt.userChoice;}catch(e){}deferredPrompt=null;return;}
+  if(appInstalada()){toast("La app ya está instalada ✓");return;}
+  const ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  toast(ios?"En iPhone: tocá Compartir ⎙ abajo y elegí 'Agregar a inicio'":"En el menú del navegador (⋮) elegí 'Instalar app' / 'Agregar a pantalla de inicio'",6000);
+}
+actualizarBotonInstalar();
 
 /* ---------- Temas ---------- */
 const THEMES_UI=[["airy","Claro"],["glass","Oscuro"],["bold","Vibrante"]];
@@ -1465,9 +1480,9 @@ function importCuadro(code){
 }
 function aplicarHashCuadro(){const m=/[#&]c=([A-Za-z0-9\-_]+)/.exec(location.hash||"");
   if(m&&importCuadro(m[1])){setStatus("Cuadro compartido cargado");if(typeof tab==="function")tab("cuadro","#00b86b");}}
-function toast(msg){let t=document.getElementById("toast");
+function toast(msg,ms){let t=document.getElementById("toast");
   if(!t){t=document.createElement("div");t.id="toast";document.body.appendChild(t);}
-  t.textContent=msg;t.classList.add("show");clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),2600);}
+  t.textContent=msg;t.classList.add("show");clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),ms||2600);}
 async function compartirLink(){const url=shareLink();
   if(navigator.share){try{await navigator.share({title:"Mi cuadro · Mundial 2026",text:"Mirá mi cuadro del Mundial 2026",url});return;}catch(e){if(e&&e.name==="AbortError")return;}}
   try{await navigator.clipboard.writeText(url);toast("Link copiado ✓");}catch(e){prompt("Copiá el link:",url);}
