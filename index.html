@@ -136,6 +136,12 @@ table{width:100%;border-collapse:collapse;font-size:13px}
 .panel h2{padding:8px 14px 0;font-size:18px}
 .panel .psub{padding:0 14px 6px;color:var(--muted);font-size:12px}
 h3.subh{margin:10px 0 4px;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.subtabs{display:flex;gap:6px;padding:0 0 12px;flex-wrap:wrap}
+.subtab{border:1px solid var(--line);background:var(--panel-bg);color:var(--text);border-radius:999px;
+  padding:7px 14px;font-weight:bold;font-size:12px;cursor:pointer;transition:all .15s ease}
+.subtab:hover{filter:brightness(.97)}
+.subtab.on{background:var(--red);color:#fff;border-color:transparent}
+.muted2{color:var(--muted);font-size:11px}
 .panel .pbody{padding:0 14px 14px}
 .rank{width:100%;border-collapse:collapse;font-size:13px}
 .rank th{background:var(--th-bg);color:var(--muted);font-size:12px;font-weight:600;
@@ -466,7 +472,7 @@ let TABLAS={}, MAPA3={}, KORES={}, ESTILO="spotlight", FLIP={}, PHOTOS={};
 let FSORT="fifa", FDIR=1, FFILTER="all", FQ="", CALFILT="all", CALTEAM="all";
 /* asistencias y tarjetas (fuente: ESPN, gratis, sin key, CORS *) */
 const ESPN_LEADERS="https://sports.core.api.espn.com/v2/sports/soccer/leagues/fifa.world/seasons/2026/types/1/leaders";
-let ASIST=[], TARJ_A=[], TARJ_R=[], ESPN_NAMES={};
+let ASIST=[], TARJ_A=[], TARJ_R=[], ESPN_NAMES={}, STAB="resumen";
 
 /* ============================ UTILS ============================ */
 const flagUrl=t=>ISO[t]?`https://flagcdn.com/w40/${ISO[t]}.png`:"";
@@ -1153,34 +1159,42 @@ function statsExtra(){
   r.push(["Partidos con valla invicta",`${cs}`]);
   return r;
 }
+function setStab(k){STAB=k;renderStats();}
 function renderStats(){
-  let recRows=records().map(([k,v])=>`<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("");
-  let extraRows=statsExtra().map(([k,v])=>`<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("");
-  const lrow=(p,i,suf)=>`<tr><td><span class="rkpos">${i+1}</span>${esc(p.n)}</td><td class="center"><b>${p.v}</b>${suf||""}</td></tr>`;
+  const recRows=records().map(([k,v])=>`<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("");
+  const extraRows=statsExtra().map(([k,v])=>`<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("");
+  const flg=p=>p.fl?`<img class="flag" src="${p.fl}" alt="" width="20" height="20" loading="lazy" decoding="async">`:"";
+  const lrow=(p,i,suf)=>`<tr><td><span class="rkpos">${i+1}</span>${flg(p)} ${esc(p.n)}${p.tm?` <span class="muted2">${esc(p.tm)}</span>`:""}</td><td class="center"><b>${p.v}</b>${suf||""}</td></tr>`;
   const asistRows=ASIST.map((p,i)=>lrow(p,i)).join("");
   const amaRows=TARJ_A.map((p,i)=>lrow(p,i," 🟨")).join("");
   const rojRows=TARJ_R.map((p,i)=>lrow(p,i," 🟥")).join("");
-  const panelAsist=ASIST.length?`
-    <div class="panel narrow"><div class="acc" style="background:var(--green)"></div>
-      <h2>TOP ASISTIDORES</h2><div class="psub">fuente: ESPN · Mundial 2026</div>
-      <div class="pbody"><table class="rank"><tbody>${asistRows}</tbody></table></div></div>`:"";
-  const panelTarj=(TARJ_A.length||TARJ_R.length)?`
-    <div class="panel narrow"><div class="acc" style="background:#e5b800"></div>
-      <h2>TARJETAS</h2><div class="psub">fuente: ESPN · Mundial 2026</div>
-      <div class="pbody">
-        ${TARJ_A.length?`<h3 class="subh">Amarillas 🟨</h3><table class="rank"><tbody>${amaRows}</tbody></table>`:""}
-        ${TARJ_R.length?`<h3 class="subh">Rojas 🟥</h3><table class="rank"><tbody>${rojRows}</tbody></table>`:""}
-      </div></div>`:"";
-  const aviso=(!ASIST.length&&!TARJ_A.length)?`<div class="hint">Asistencias y tarjetas se cargan desde ESPN al abrir (requiere conexión).</div>`:"";
-  document.getElementById("tab-stats").innerHTML=`
-    <div class="panel"><div class="acc" style="background:var(--red)"></div>
-      <h2>ESTADÍSTICAS DEL TORNEO</h2><div class="psub">datos reales calculados de los partidos jugados</div>
-      <div class="pbody"><table class="rank"><tbody>${extraRows}</tbody></table>${aviso}</div></div>
-    ${panelAsist}
-    ${panelTarj}
-    <div class="panel narrow"><div class="acc" style="background:var(--gold)"></div>
-      <h2>RÉCORDS DEL TORNEO</h2>
-      <div class="pbody"><table class="rank"><tbody>${recRows}</tbody></table></div></div>`;
+  const aviso=`<div class="panel"><div class="pbody"><div class="hint">Asistencias y tarjetas se cargan desde ESPN al abrir (requiere conexión). Probá el botón ACTUALIZAR.</div></div></div>`;
+  let body="";
+  if(STAB==="asist"){
+    body=ASIST.length?`
+      <div class="panel"><div class="acc" style="background:var(--green)"></div>
+        <h2>TOP ASISTIDORES</h2><div class="psub">fuente: ESPN · Mundial 2026</div>
+        <div class="pbody"><table class="rank"><tbody>${asistRows}</tbody></table></div></div>`:aviso;
+  }else if(STAB==="tarj"){
+    body=(TARJ_A.length||TARJ_R.length)?`
+      <div class="panel"><div class="acc" style="background:#e5b800"></div>
+        <h2>TARJETAS</h2><div class="psub">fuente: ESPN · Mundial 2026</div>
+        <div class="pbody">
+          ${TARJ_A.length?`<h3 class="subh">Amarillas 🟨</h3><table class="rank"><tbody>${amaRows}</tbody></table>`:""}
+          ${TARJ_R.length?`<h3 class="subh">Rojas 🟥</h3><table class="rank"><tbody>${rojRows}</tbody></table>`:""}
+        </div></div>`:aviso;
+  }else{
+    body=`
+      <div class="panel"><div class="acc" style="background:var(--red)"></div>
+        <h2>ESTADÍSTICAS DEL TORNEO</h2><div class="psub">datos reales calculados de los partidos jugados</div>
+        <div class="pbody"><table class="rank"><tbody>${extraRows}</tbody></table></div></div>
+      <div class="panel narrow"><div class="acc" style="background:var(--gold)"></div>
+        <h2>RÉCORDS DEL TORNEO</h2>
+        <div class="pbody"><table class="rank"><tbody>${recRows}</tbody></table></div></div>`;
+  }
+  const subbar=[["resumen","Resumen"],["asist","Asistidores"],["tarj","Tarjetas"]].map(([k,t])=>
+    `<button class="subtab ${STAB===k?'on':''}" onclick="setStab('${k}')">${t}</button>`).join("");
+  document.getElementById("tab-stats").innerHTML=`<div class="subtabs">${subbar}</div>${body}`;
 }
 function renderGoleadores(){
   const gs=goleadores();
@@ -1235,21 +1249,22 @@ async function bajarFotos(){
 
 /* ---- asistencias y tarjetas desde ESPN (gratis, sin key, CORS *) ---- */
 async function bajarEspnStats(){
-  try{const c=localStorage.getItem("wc26espnames");if(c)ESPN_NAMES={...JSON.parse(c),...ESPN_NAMES};}catch(e){}
+  try{const c=localStorage.getItem("wc26espn");if(c)ESPN_NAMES={...JSON.parse(c),...ESPN_NAMES};}catch(e){}
   let cats;
   try{const d=await (await fetch(ESPN_LEADERS)).json();cats=d.categories||[];}catch(e){return;}
   const pick=n=>{const c=cats.find(c=>c.name===n);return c?(c.leaders||[]):[];};
   const topA=pick("assistsLeaders").length?pick("assistsLeaders"):pick("assists");
-  const lead={A:topA.slice(0,12),Y:pick("yellowCards").slice(0,12),R:pick("redCards").slice(0,8)};
+  const lead={A:topA.slice(0,15),Y:pick("yellowCards").slice(0,15),R:pick("redCards").slice(0,10)};
   const idOf=l=>{const r=((l.athlete||{}).$ref)||"";const m=/athletes\/(\d+)/.exec(r);return m?m[1]:null;};
   const need=new Set();
-  for(const arr of Object.values(lead))for(const l of arr){const id=idOf(l);if(id&&!ESPN_NAMES[id])need.add(id);}
+  for(const arr of Object.values(lead))for(const l of arr){const id=idOf(l);if(id&&!(ESPN_NAMES[id]&&ESPN_NAMES[id].n))need.add(id);}
   await Promise.all([...need].map(async id=>{
     try{const u=`https://sports.core.api.espn.com/v2/sports/soccer/leagues/fifa.world/seasons/2026/athletes/${id}?lang=en&region=us`;
-      const a=await (await fetch(u)).json();ESPN_NAMES[id]=a.displayName||a.fullName||("#"+id);}catch(e){}
+      const a=await (await fetch(u)).json();
+      ESPN_NAMES[id]={n:a.displayName||a.fullName||("#"+id),fl:(a.flag||{}).href||"",tm:a.citizenship||(a.flag||{}).alt||""};}catch(e){}
   }));
-  try{localStorage.setItem("wc26espnames",JSON.stringify(ESPN_NAMES));}catch(e){}
-  const build=arr=>arr.map(l=>{const id=idOf(l);return id&&ESPN_NAMES[id]?{n:ESPN_NAMES[id],v:l.value}:null;}).filter(Boolean);
+  try{localStorage.setItem("wc26espn",JSON.stringify(ESPN_NAMES));}catch(e){}
+  const build=arr=>arr.map(l=>{const id=idOf(l),e=ESPN_NAMES[id];return e&&e.n?{n:e.n,v:l.value,fl:e.fl,tm:e.tm}:null;}).filter(Boolean);
   ASIST=build(lead.A);TARJ_A=build(lead.Y);TARJ_R=build(lead.R);
   renderStats();
 }
