@@ -87,6 +87,9 @@ button{font-family:inherit;cursor:pointer}
 .btn:active{transform:translateY(0)}
 :focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 .status{color:var(--muted);font-size:12px;align-self:center}
+.simacts{display:inline-flex;gap:8px;align-items:center;animation:fade .22s ease}
+.simacts[hidden]{display:none}
+.simnote{color:var(--muted);font-size:12px;align-self:center;font-style:italic}
 .tabs{display:flex;gap:8px;padding:6px 14px;flex-wrap:wrap}
 .pill{border:1px solid var(--line2);background:var(--pill-bg);color:var(--muted);
   border-radius:18px;padding:8px 18px;font-weight:bold;font-size:13px;box-shadow:var(--shadow-sm);
@@ -345,21 +348,25 @@ select.search{max-width:240px;cursor:pointer}
 
 <div class="toolbar">
   <button class="btn blue" onclick="actualizar()">ACTUALIZAR</button>
-  <button class="btn green" onclick="recalcular()">RECALCULAR</button>
-  <button class="btn sim" onclick="simularTodo()">⚽ SIMULAR TODO</button>
-  <button class="btn ghost" onclick="restaurar()">RESTAURAR REALES</button>
+  <span class="simacts" id="simacts" hidden>
+    <button class="btn green" onclick="recalcular()">RECALCULAR</button>
+    <button class="btn sim" onclick="simularTodo()">⚽ SIMULAR TODO</button>
+    <button class="btn ghost" onclick="restaurar()">RESTAURAR REALES</button>
+  </span>
+  <span class="simnote" id="simnote">✏️ Editá un marcador para habilitar las acciones de simulación</span>
   <div class="themesel" id="themesel"></div>
   <span class="status" id="status"></span>
 </div>
 <div class="tabs" id="tabs" role="tablist" aria-label="Secciones"></div>
 <div class="tabwrap">
-  <div class="hint">Tip: editá cualquier marcador (real o futuro) y tocá RECALCULAR. En el cuadro, hacé clic en un equipo para hacerlo ganar. En Estadísticas, clic en una figurita para ver el dorso.</div>
-  <div class="tabpage show" id="tab-grupos" role="tabpanel"></div>
-  <div class="tabpage" id="tab-calendario" role="tabpanel"></div>
-  <div class="tabpage" id="tab-terceros" role="tabpanel"></div>
+  <div class="hint">Tip: en Fase de grupos editá cualquier marcador — ahí aparecen los botones RECALCULAR, SIMULAR TODO y RESTAURAR REALES. En el Cuadro, hacé clic en un equipo para hacerlo ganar. En Goleadores, clic en una figurita para ver el dorso.</div>
+  <div class="tabpage show" id="tab-calendario" role="tabpanel"></div>
   <div class="tabpage" id="tab-cuadro" role="tabpanel"></div>
   <div class="tabpage" id="tab-fifa" role="tabpanel"></div>
   <div class="tabpage" id="tab-stats" role="tabpanel"></div>
+  <div class="tabpage" id="tab-goleadores" role="tabpanel"></div>
+  <div class="tabpage" id="tab-grupos" role="tabpanel"></div>
+  <div class="tabpage" id="tab-terceros" role="tabpanel"></div>
 </div>
 
 <script>
@@ -392,19 +399,29 @@ const ISO={"Algeria":"dz","Argentina":"ar","Australia":"au","Austria":"at","Belg
 "Uruguay":"uy","Uzbekistan":"uz"};
 /* Ranking oficial FIFA 20/07/2026 (top-50 desde football-ranking.com). Equipos fuera del top-50
    conservan su posicion aprox. del 11/06/2026 (sin dato de movimiento). */
-const RANKING_FIFA={"France":1,"Argentina":2,"Spain":3,"England":4,"Brazil":5,"Morocco":6,
+const RANKING_FIFA={"Argentina":1,"France":2,"Spain":3,"England":4,"Brazil":5,"Morocco":6,
 "Netherlands":7,"Portugal":8,"Mexico":9,"Belgium":10,"Colombia":11,"Germany":12,"Croatia":13,
 "USA":15,"Switzerland":16,"Japan":17,"Senegal":18,"Uruguay":19,"Iran":21,"Austria":22,"Norway":23,
-"Ecuador":24,"Egypt":26,"Turkey":27,"Australia":28,"Algeria":29,"Ivory Coast":30,"South Korea":31,
-"Canada":32,"Sweden":36,"Paraguay":37,"Scotland":41,"Panama":42,"DR Congo":46,"Czech Republic":48,
+"Ecuador":24,"Egypt":26,"Turkey":27,"Australia":28,"Algeria":29,"Canada":30,"Ivory Coast":31,
+"South Korea":32,"Sweden":36,"Paraguay":37,"DR Congo":41,"Scotland":42,"Panama":44,"Czech Republic":48,
 "Tunisia":45,"Uzbekistan":50,"Qatar":56,"Iraq":57,"South Africa":60,"Saudi Arabia":61,
 "Jordan":63,"Bosnia & Herzegovina":64,"Cape Verde":67,"Ghana":73,"Curaçao":82,"Haiti":83,"New Zealand":85};
+/* puntos FIFA reales — top-50 edicion live 20/07/2026 (football-ranking.com); fuera del top-50 ultima oficial 11/06/2026 */
+const PTS_FIFA={"Argentina":1907.41,"France":1906.84,"Spain":1879.58,"England":1840.46,"Brazil":1785.20,
+"Morocco":1776.40,"Netherlands":1775.50,"Portugal":1764.86,"Mexico":1736.01,"Belgium":1735.42,
+"Colombia":1729.30,"Germany":1726.22,"Croatia":1723.05,"USA":1677.17,"Switzerland":1676.00,"Japan":1673.68,
+"Senegal":1653.43,"Uruguay":1634.71,"Iran":1609.84,"Austria":1598.82,"Norway":1594.04,"Ecuador":1592.59,
+"Egypt":1584.71,"Turkey":1582.54,"Australia":1581.35,"Algeria":1576.80,"Canada":1571.34,"Ivory Coast":1565.48,
+"South Korea":1558.72,"Sweden":1525.58,"Paraguay":1520.59,"DR Congo":1495.48,"Scotland":1491.22,"Panama":1478.42,
+"Tunisia":1476.41,"Czech Republic":1467.26,"Uzbekistan":1458.73,"Qatar":1450.31,"Iraq":1446.28,
+"South Africa":1428.38,"Saudi Arabia":1423.88,"Jordan":1387.74,"Bosnia & Herzegovina":1387.22,"Cape Verde":1371.11,
+"Ghana":1346.88,"Curaçao":1294.77,"Haiti":1293.10,"New Zealand":1275.58};
 /* MOV = cambio de posicion vs edicion 11/06/2026 (+ sube, - baja). Sin clave = sin dato (s/d). */
-const RANKING_MOV={"France":2,"Argentina":-1,"Spain":-1,"England":0,"Brazil":1,"Morocco":1,
+const RANKING_MOV={"Argentina":0,"France":1,"Spain":-1,"England":0,"Brazil":1,"Morocco":1,
 "Netherlands":1,"Portugal":-3,"Mexico":5,"Belgium":-1,"Colombia":2,"Germany":-2,"Croatia":-2,
 "USA":2,"Switzerland":3,"Japan":1,"Senegal":-3,"Uruguay":-3,"Iran":-1,"Austria":2,"Norway":8,
-"Ecuador":-1,"Egypt":3,"Turkey":-5,"Australia":-1,"Algeria":-1,"Ivory Coast":3,"South Korea":-6,
-"Canada":-2,"Sweden":2,"Paraguay":4,"Scotland":1,"Panama":-8,"DR Congo":0,"Czech Republic":-8};
+"Ecuador":-1,"Egypt":3,"Turkey":-5,"Australia":-1,"Algeria":-1,"Canada":0,"Ivory Coast":2,"South Korea":-7,
+"Sweden":2,"Paraguay":4,"DR Congo":5,"Scotland":0,"Panama":-10,"Czech Republic":-8};
 /* [confederacion, titulos mundiales, finales jugadas, participaciones (incl. 2026)] — historico aprox. */
 const CONFEDS=["UEFA","CONMEBOL","CONCACAF","CAF","AFC","OFC"];
 const TEAMINFO={
@@ -467,7 +484,7 @@ async function cargar(forzar){
   }
   DATA=data;parse();SCORES={...REAL};KOWIN={...KOREAL};
   setStatus(`${GM.length} partidos de grupo`);
-  renderGrupos();recalcular();renderStats();renderCalendario();
+  renderGrupos();recalcular();renderStats();renderGoleadores();renderCalendario();
   aplicarHashCuadro();
   bajarFotos();
 }
@@ -477,7 +494,7 @@ async function actualizar(){
     localStorage.setItem("wc26",JSON.stringify(data));DATA=data;parse();
     SCORES={...REAL};KOWIN={...KOREAL};
     setStatus(`${GM.length} partidos · actualizado`);
-    renderGrupos();recalcular();renderStats();renderCalendario();bajarFotos();
+    renderGrupos();recalcular();renderStats();renderGoleadores();renderCalendario();bajarFotos();
     _liveTick();
   }catch(e){setStatus("No se pudo actualizar (sin internet)");}
 }
@@ -659,9 +676,9 @@ function renderGrupos(){
     GM.filter(m=>m.g===L).forEach(m=>{
       const r=SCORES[m.id];
       h+=`<div class="mrow"><span class="t1">${esc(corto(m.t1,12))}</span>${flagImg(m.t1)}
-        <input id="s_${m.id}_1" value="${r?r[0]:""}" onchange="recalcular()">
+        <input id="s_${m.id}_1" value="${r?r[0]:""}" onchange="marcadorEditado()">
         <span style="color:var(--muted)">:</span>
-        <input id="s_${m.id}_2" value="${r?r[1]:""}" onchange="recalcular()">
+        <input id="s_${m.id}_2" value="${r?r[1]:""}" onchange="marcadorEditado()">
         ${flagImg(m.t2)}<span class="t2">${esc(corto(m.t2,12))}</span></div>
         <div class="live" id="lv_${m.id}"></div>`;
     });
@@ -978,6 +995,7 @@ function fifaRowsHTML(){
   if(FQ.trim())eqs=eqs.filter(t=>t.toLowerCase().includes(FQ.trim().toLowerCase()));
   const cmp={
     fifa:(a,b)=>(RANKING_FIFA[a]||999)-(RANKING_FIFA[b]||999),
+    pts:(a,b)=>(PTS_FIFA[b]||0)-(PTS_FIFA[a]||0),
     mun:(a,b)=>_inf(b)[3]-_inf(a)[3],
     tit:(a,b)=>_inf(b)[1]-_inf(a)[1]||_inf(b)[2]-_inf(a)[2],
     forma:(a,b)=>((ST[b]||{}).pts||0)-((ST[a]||{}).pts||0)||((ST[b]||{}).dg||0)-((ST[a]||{}).dg||0),
@@ -985,6 +1003,7 @@ function fifaRowsHTML(){
   eqs.sort((a,b)=>{let v=cmp(a,b)*FDIR; if(v===0)v=(RANKING_FIFA[a]||999)-(RANKING_FIFA[b]||999); return v;});
   return eqs.map(t=>{const i=_inf(t);
     return `<tr><td><span class="rkpos">${RANKING_FIFA[t]||"-"}</span>${flagImg(t)}${esc(t)}</td>
+      <td class="center pts">${PTS_FIFA[t]?PTS_FIFA[t].toFixed(2):"–"}</td>
       <td class="center">${_movHtml(t)}</td>
       <td class="center">${i[0]}</td><td class="center">${i[3]}</td>
       <td class="center" title="Finales jugadas: ${i[2]}">${i[1]?("🏆 "+i[1]):"–"}</td>
@@ -1006,6 +1025,7 @@ function renderFifa(){
       ${fbar}
       <div class="ftwrap"><table class="rank"><thead><tr>
       <th class="sortable" onclick="setFifaSort('fifa')">SELECCIÓN${arrow('fifa')}</th>
+      <th class="center sortable" onclick="setFifaSort('pts')">PTS${arrow('pts')}</th>
       <th class="center">MOV</th>
       <th class="center">CONF</th>
       <th class="center sortable" onclick="setFifaSort('mun')">MUN${arrow('mun')}</th>
@@ -1103,27 +1123,62 @@ function attachTilt(){
     card.addEventListener("mouseleave",()=>{card.style.transform="";card.classList.remove("tilt");});
   });
 }
-function setStyle(s){ESTILO=s;renderStats();}
+function setStyle(s){ESTILO=s;renderGoleadores();}
+function statsExtra(){
+  const jug=[];for(const x of (DATA.matches||[])){const ft=(x.score||{}).ft;
+    if(Array.isArray(ft)&&ft.length===2&&x.team1&&x.team2&&!esEtiqueta(x.team1)&&!esEtiqueta(x.team2))
+      jug.push([x.team1,x.team2,+ft[0],+ft[1]]);}
+  const total=(DATA.matches||[]).length;
+  if(!jug.length)return [["Sin datos","Todavía no hay partidos jugados"]];
+  const r=[],tg=jug.reduce((s,j)=>s+j[2]+j[3],0);
+  r.push(["Partidos jugados",`${jug.length} de ${total}`]);
+  r.push(["Goles totales",`${tg} (${(tg/jug.length).toFixed(2)} por partido)`]);
+  let emp=0;const win={},gc={},pj={};
+  for(const[a,b,s1,s2]of jug){pj[a]=(pj[a]||0)+1;pj[b]=(pj[b]||0)+1;
+    gc[a]=(gc[a]||0)+s2;gc[b]=(gc[b]||0)+s1;
+    if(s1>s2)win[a]=(win[a]||0)+1;else if(s2>s1)win[b]=(win[b]||0)+1;else emp++;}
+  const mw=Object.entries(win).sort((x,y)=>y[1]-x[1])[0];
+  if(mw)r.push(["Más victorias",`${mw[0]} (${mw[1]})`]);
+  const def=Object.entries(gc).sort((x,y)=>x[1]-y[1])[0];
+  if(def)r.push(["Valla menos vencida",`${def[0]} (${def[1]} en contra)`]);
+  r.push(["Empates",`${emp} de ${jug.length}`]);
+  r.push(["Goleadas (dif ≥3)",""+jug.filter(j=>Math.abs(j[2]-j[3])>=3).length]);
+  const bts=jug.filter(j=>j[2]>0&&j[3]>0).length;
+  r.push(["Ambos equipos marcan",`${bts} (${Math.round(bts/jug.length*100)}%)`]);
+  const cs=jug.filter(j=>j[2]===0||j[3]===0).length;
+  r.push(["Partidos con valla invicta",`${cs}`]);
+  return r;
+}
 function renderStats(){
-  const gs=goleadores();
   let recRows=records().map(([k,v])=>`<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("");
+  let extraRows=statsExtra().map(([k,v])=>`<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("");
+  document.getElementById("tab-stats").innerHTML=`
+    <div class="panel"><div class="acc" style="background:var(--red)"></div>
+      <h2>ESTADÍSTICAS DEL TORNEO</h2><div class="psub">datos reales calculados de los partidos jugados</div>
+      <div class="pbody"><table class="rank"><tbody>${extraRows}</tbody></table></div></div>
+    <div class="panel narrow"><div class="acc" style="background:var(--gold)"></div>
+      <h2>RÉCORDS DEL TORNEO</h2>
+      <div class="pbody"><table class="rank"><tbody>${recRows}</tbody></table></div></div>`;
+}
+function renderGoleadores(){
+  const gs=goleadores();
   const total=gs.reduce((s,x)=>s+x.g,0);
   let cards=gs.map((p,i)=>figHtml(p,i)).join("");
   const sel=[["spotlight","Spotlight"],["sticker","Sticker"],["hud","HUD"]].map(([k,d])=>
     `<div class="s ${ESTILO===k?"on":""}" onclick="setStyle('${k}')">${d}</div>`).join("");
-  document.getElementById("tab-stats").innerHTML=`
-    <div class="panel"><div class="acc" style="background:var(--red)"></div>
-      <h2>GOLEADORES</h2><div class="psub">${total} goles · ${gs.length} goleadores · datos reales del torneo</div>
+  document.getElementById("tab-goleadores").innerHTML=`
+    <div class="panel"><div class="acc" style="background:var(--gold)"></div>
+      <h2>GOLEADORES</h2><div class="psub">${total} goles · ${gs.length} goleadores · figuritas con datos reales</div>
       <div class="pbody">
         <div class="selector"><b style="color:var(--muted);font-size:12px">ESTILO:</b>${sel}</div>
         <div class="hint">ORO 5+ goles · PLATA 3-4 · BRONCE 1-2 · clic para ver el dorso ↺ ${spinnerTxt()}</div>
         <div class="cards ${ESTILO}">${cards||"(Sin goles aún)"}</div>
-      </div></div>
-    <div class="panel narrow"><div class="acc" style="background:var(--gold)"></div>
-      <h2>RÉCORDS DEL TORNEO</h2>
-      <div class="pbody"><table class="rank"><tbody>${recRows}</tbody></table></div></div>`;
+      </div></div>`;
   attachTilt();
 }
+function mostrarSimActs(){const s=document.getElementById("simacts");if(s)s.hidden=false;
+  const n=document.getElementById("simnote");if(n)n.style.display="none";}
+function marcadorEditado(){mostrarSimActs();recalcular();}
 let _bajando=false;
 function spinnerTxt(){return _bajando?"· descargando fotos…":"";}
 
@@ -1131,8 +1186,8 @@ function spinnerTxt(){return _bajando?"· descargando fotos…":"";}
 async function bajarFotos(){
   try{const c=localStorage.getItem("wc26photos");if(c)PHOTOS={...JSON.parse(c),...PHOTOS};}catch(e){}
   const gs=goleadores();const faltan=gs.map(p=>p.n).filter(n=>!(n in PHOTOS));
-  if(!faltan.length){renderStats();return;}
-  _bajando=true;renderStats();
+  if(!faltan.length){renderGoleadores();return;}
+  _bajando=true;renderGoleadores();
   let huboError=false;
   for(let i=0;i<faltan.length;i+=30){
     const chunk=faltan.slice(i,i+30);
@@ -1145,7 +1200,7 @@ async function bajarFotos(){
       // guardar e ir mostrando las fotos a medida que llegan
       const g={};for(const k in PHOTOS)if(PHOTOS[k])g[k]=PHOTOS[k];
       try{localStorage.setItem("wc26photos",JSON.stringify(g));}catch(e){}
-      renderStats();
+      renderGoleadores();
     }catch(e){huboError=true;}
     await new Promise(r=>setTimeout(r,350));
   }
@@ -1153,13 +1208,14 @@ async function bajarFotos(){
   // limpiar nulls para guardar solo encontradas
   const guardar={};for(const k in PHOTOS)if(PHOTOS[k])guardar[k]=PHOTOS[k];
   try{localStorage.setItem("wc26photos",JSON.stringify(guardar));}catch(e){}
-  _bajando=false;renderStats();
+  _bajando=false;renderGoleadores();
 }
 
 /* ============================ TABS / BANNER ============================ */
-const TABDEF=[["grupos","FASE DE GRUPOS","#1e6bff"],["calendario","CALENDARIO","#8b5cf6"],
-  ["terceros","MEJORES TERCEROS","#ee9b00"],["cuadro","CUADRO / ELIMINATORIAS","#00b86b"],
-  ["fifa","RANKING FIFA","#00b8d4"],["stats","ESTADÍSTICAS","#e5103b"]];
+const TABDEF=[["calendario","CALENDARIO","#8b5cf6"],["cuadro","CUADRO / ELIMINATORIAS","#00b86b"],
+  ["fifa","RANKING FIFA","#00b8d4"],["stats","ESTADÍSTICAS","#e5103b"],
+  ["goleadores","GOLEADORES","#f5b301"],["grupos","FASE DE GRUPOS","#1e6bff"],
+  ["terceros","MEJORES TERCEROS","#ee9b00"]];
 function renderTabs(){
   document.getElementById("tabs").innerHTML=TABDEF.map(([k,t,c],i)=>
     `<button class="pill ${i===0?"active":""}" id="pill-${k}" role="tab" aria-selected="${i===0}"
@@ -1303,6 +1359,7 @@ document.addEventListener("visibilitychange",()=>{if(!document.hidden){clearTime
 .mrow input.livein{color:#e5103b;font-weight:800;border-color:rgba(229,16,59,.45)}
 .kosc{font-size:11px;font-weight:800;text-align:center;color:var(--muted);margin-top:2px}
 .kosc.live{color:#e5103b}
+td.pts{font-weight:800;font-variant-numeric:tabular-nums;color:var(--blue)}
 .mov{font-weight:800;font-size:12px}
 .mov.up{color:#00b86b}.mov.down{color:#e5103b}.mov.eq{color:var(--muted)}
 .mov.sd{color:var(--muted);font-weight:600;font-size:11px;opacity:.7}
