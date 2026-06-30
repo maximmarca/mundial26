@@ -210,6 +210,8 @@ select.search{max-width:240px;cursor:pointer}
 .champ .nm{font-size:18px;font-weight:bold}
 .champ.bronze{background:#f6e7d4;border-color:#8a5a32}
 .champ.bronze .hd{background:#8a5a32}
+.champ.silver{background:#eef1f6;border-color:#9aa3b2}
+.champ.silver .hd{background:#9aa3b2}
 .champ.sm{width:174px}
 .tro svg{vertical-align:middle;filter:drop-shadow(0 2px 2px rgba(0,0,0,.25))}
 .acc-round{margin:8px 0;border:1px solid var(--line);border-radius:10px;overflow:hidden}
@@ -763,16 +765,21 @@ function mboxmHTML(n){
       `${flagImg(eq)}<span>${esc(corto(eq,20))||"(por definir)"}</span>${gol(eq)}</div>`;};
   const prov=(!real&&!koDefinido(n))?" prov":"";
   const extra=sR?(sR.p?`<div class="kosc">pen. ${sR.p[0]}-${sR.p[1]}</div>`:""):_koLive(t1,t2);
-  return `<div class="mboxm ${fin?'final':(real?'real':'')}${prov}"><div class="cab">#${n} ${META[n]?META[n].fecha:""}${prov?' · por confirmar':''}</div>${row(t1)}${row(t2)}${extra}</div>`;
+  return `<div class="mboxm ${fin?'final':(real?'real':'')}${prov}"><div class="cab cabc" onclick="abrirPartidoNum(${n})" title="Ver detalle del partido">#${n} ${META[n]?META[n].fecha:""}${prov?' · por confirmar':''} ℹ️</div>${row(t1)}${row(t2)}${extra}</div>`;
 }
 function renderCuadroMobile(){
   const RM=[["DIECISEISAVOS",Array.from({length:16},(_,i)=>73+i)],["OCTAVOS",[89,90,91,92,93,94,95,96]],
     ["CUARTOS",[97,98,99,100]],["SEMIS",[101,102]],["3ER PUESTO",[103]],["FINAL",[104]]];
   let h="";const champ=KOWIN[104],w3m=KOWIN[103];
+  const finParM=KORES[104]||["",""];const subM=champ?(finParM[0]===champ?finParM[1]:finParM[0]):"";
   if(champ&&!esEtiqueta(champ))
     h+=`<div class="champ" style="position:static;width:auto;margin:0 0 12px">
       <div class="hd">CAMPEÓN DEL MUNDO</div><div class="cup">${trofeoSVG("mundial",60)}</div>
       <div class="nm">${flagImg(champ)} ${esc(corto(champ,18))}</div></div>`;
+  if(subM&&!esEtiqueta(subM))
+    h+=`<div class="champ silver" style="position:static;width:auto;margin:0 0 12px">
+      <div class="hd">SUBCAMPEÓN</div>
+      <div class="nm">🥈 ${flagImg(subM)} ${esc(corto(subM,18))}</div></div>`;
   if(w3m&&!esEtiqueta(w3m))
     h+=`<div class="champ bronze" style="position:static;width:auto;margin:0 0 12px">
       <div class="hd">3.º PUESTO</div><div class="cup">${trofeoSVG("bronce",44)}</div>
@@ -784,7 +791,7 @@ function renderCuadroMobile(){
 }
 function renderCuadro(){
   if(window.innerWidth<=640)return renderCuadroMobile();
-  const cw=156,ch=58,gap=18,pitch=186,x0=16,y0=44;
+  const cw=156,ch=64,gap=34,pitch=196,x0=16,y0=44;
   const xFinal=x0+4*pitch;
   const feeders={};for(const[n,[a,b]]of Object.entries(LLAVES))feeders[n]=[+a.slice(1),+b.slice(1)];
   const posy={};
@@ -814,21 +821,24 @@ function renderCuadro(){
     const depth=3-k; boxes+=`<div class="rtitle" style="left:${x0+(8-depth)*pitch}px;top:14px">${t}</div>`;});
   // partidos del arbol
   for(const n of Object.keys(COL).map(Number))boxes+=boxHtml(n,xpos(n),posy[n]-ch/2);
-  // final ya esta en COL; 3er puesto y campeon en el centro
-  const ty=posy[104]+130;
-  boxes+=`<div class="rtitle" style="left:${xFinal}px;top:${ty-20}px;color:var(--gold)">3ER PUESTO</div>`;
+  // final esta en COL (centro). Partido 3er/4to puesto: bien separado debajo de la final
+  const ty=posy[104]+ch+90;
+  boxes+=`<div class="rtitle" style="left:${xFinal}px;top:${ty-22}px;color:#8a5a32">3.º Y 4.º PUESTO</div>`;
   boxes+=boxHtml(103,xFinal,ty);
+  // Podio resumen (🥇🥈🥉) arriba al centro, en la zona vacia (no se superpone con nada)
   const champ=KOWIN[104];
+  const finPar=KORES[104]||["",""];
+  const sub=champ?(finPar[0]===champ?finPar[1]:finPar[0]):"";
+  const tercero=KOWIN[103];
+  const medalla=(ic,lbl,eq)=>(eq&&!esEtiqueta(eq))?`<div class="pod-row"><span class="pod-m">${ic}</span><span class="pod-l">${lbl}</span>${flagImg(eq)}<span class="pod-n">${esc(corto(eq,16))}</span></div>`:"";
   if(champ&&!esEtiqueta(champ)){
-    boxes+=`<div class="champ" style="left:${xFinal-8}px;top:${posy[104]-170}px">
-      <div class="hd">CAMPEÓN DEL MUNDO</div><div class="cup">${trofeoSVG("mundial",64)}</div>
-      <div class="nm">${flagImg(champ)} ${esc(corto(champ,16))}</div></div>`;
-  }
-  const w3=KOWIN[103];
-  if(w3&&!esEtiqueta(w3)){
-    boxes+=`<div class="champ bronze sm" style="left:${xFinal-2}px;top:${ty+ch+20}px">
-      <div class="hd">3.º PUESTO</div><div class="cup">${trofeoSVG("bronce",40)}</div>
-      <div class="nm">${flagImg(w3)} ${esc(corto(w3,16))}</div></div>`;
+    boxes+=`<div class="podium" style="left:${xFinal-42}px;top:${y0+6}px">
+      <div class="cup">${trofeoSVG("mundial",54)}</div>
+      <div class="pod-hd">PODIO</div>
+      ${medalla("🥇","Campeón",champ)}
+      ${medalla("🥈","Subcampeón",sub)}
+      ${medalla("🥉","3.º puesto",tercero)}
+    </div>`;
   }
   const sc=document.getElementById("tab-cuadro");
   const prev=sc.querySelector(".bracket-scroll");
@@ -848,7 +858,7 @@ function boxHtml(n,x,y){
       ${flagImg(eq)}<span>${esc(corto(eq,16))||"(por definir)"}</span>${gol(eq)}</div>`;};
   const extra=sR?(sR.p?`<div class="kosc">pen. ${sR.p[0]}-${sR.p[1]}</div>`:""):_koLive(t1,t2);
   return `<div class="${cls}" style="left:${x}px;top:${y}px">
-    <div class="cab">#${n} ${META[n]?META[n].fecha:""}</div>${row(t1)}${row(t2)}${extra}</div>`;
+    <div class="cab cabc" onclick="abrirPartidoNum(${n})" title="Ver detalle del partido">#${n} ${META[n]?META[n].fecha:""} ℹ️</div>${row(t1)}${row(t2)}${extra}</div>`;
 }
 function elegir(n,eq){KOWIN[n]=eq;resolverCuadro();renderCuadro();}
 
@@ -1176,6 +1186,7 @@ function abrirPartido(i){
   document.body.appendChild(ov);document.body.style.overflow="hidden";
   if(empezo){_modKey=t1+"|"+t2;detallePartidoEspn(t1,t2,x.date,_modKey);}
 }
+function abrirPartidoNum(n){const i=(DATA&&DATA.matches||[]).findIndex(x=>x.num!=null&&Number(x.num)===Number(n));if(i>=0)abrirPartido(i);}
 function cerrarPartido(){const ov=document.getElementById("md-ov");if(ov)ov.remove();document.body.style.overflow="";_modKey=null;}
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&document.getElementById("md-ov"))cerrarPartido();});
 async function _espnEventMatch(t1,t2,date){
@@ -1542,6 +1553,17 @@ document.addEventListener("visibilitychange",()=>{if(!document.hidden){clearTime
 .res.live small{font-weight:700;opacity:.85}
 .mrow input.livein{color:#e5103b;font-weight:800;border-color:rgba(229,16,59,.45)}
 .kog{flex:none;font-variant-numeric:tabular-nums;font-weight:800;min-width:14px;text-align:right}
+.cabc{cursor:pointer}
+.cabc:hover{color:var(--blue);text-decoration:underline}
+.podium{position:absolute;width:248px;background:var(--card);border:2px solid var(--gold);border-radius:14px;padding:12px 14px 10px;box-shadow:0 8px 22px rgba(0,0,0,.28);z-index:6}
+.podium .cup{text-align:center;line-height:1}
+.podium .cup svg{display:block;margin:0 auto;filter:drop-shadow(0 3px 4px rgba(0,0,0,.3))}
+.podium .pod-hd{text-align:center;font-size:11px;font-weight:900;letter-spacing:.08em;color:var(--gold);margin:4px 0 6px}
+.pod-row{display:flex;align-items:center;gap:7px;font-size:13px;padding:5px 0;border-top:1px solid var(--line)}
+.pod-m{font-size:16px;flex:none}
+.pod-l{color:var(--muted);min-width:74px;text-align:left;flex:none}
+.pod-row img.flag{flex:none}
+.pod-n{font-weight:800;flex:1;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kosc{font-size:11px;font-weight:800;text-align:center;color:var(--muted);margin-top:2px}
 .kosc.live{color:#e5103b}
 td.pts{font-weight:800;font-variant-numeric:tabular-nums;color:var(--blue)}
