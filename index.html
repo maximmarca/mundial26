@@ -1113,21 +1113,24 @@ function renderCalendario(){
     const dayKey=d?d.toDateString():x.date;
     if(dayKey!==lastDay){lastDay=dayKey;
       const ts=d?new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime():Date.parse(x.date);
-      rows+=`<tr class="dsep" data-ts="${ts}"><td colspan="2">${d?diaTxtD(d):x.date}</td></tr>`;}
+      rows+=`<div class="dsep cal-day" data-ts="${ts}">${d?diaTxtD(d):x.date}</div>`;}
     const ft=(x.score||{}).ft;
     // eliminatoria: usar el cuadro calculado (consistente con la pestaña Cuadro)
     const par=(x.num!=null&&KORES[x.num])?KORES[x.num]:[x.team1,x.team2];
     const t1=par[0],t2=par[1];
     const lv=liveDe(t1,t2);
     let mid;
-    if(lv&&lv.state==="in")mid=`<span class="res live">${lv.s1} - ${lv.s2} <small>● ${esc(lv.clock||lv.detail||"EN VIVO")}</small></span>`;
-    else if(ft)mid=`<span class="res">${ft[0]} - ${ft[1]}</span>`;
-    else if(lv&&lv.state==="post")mid=`<span class="res">${lv.s1} - ${lv.s2}</span>`;
-    else mid=`<span class="vs">vs</span>`;
+    if(lv&&lv.state==="in")mid=`<span class="cal-sc live">${lv.s1}-${lv.s2}</span>`;
+    else if(ft)mid=`<span class="cal-sc">${ft[0]}-${ft[1]}</span>`;
+    else if(lv&&lv.state==="post")mid=`<span class="cal-sc">${lv.s1}-${lv.s2}</span>`;
+    else mid=`<span class="cal-vs">vs</span>`;
     const prov=(x.num!=null&&!koDefinido(x.num))?`<span class="tag-prov">por confirmar</span>`:"";
-    const part=`<span class="tagr">${esc(rondaTxt(x))}</span>${flagImg(t1)} ${esc(corto(t1,15))} ${mid} ${esc(corto(t2,15))} ${flagImg(t2)}${prov}`;
+    const envivo=(lv&&lv.state==="in")?`<span class="cal-livetag">● EN VIVO ${esc(lv.clock||"")}</span>`:"";
     const gi=(DATA.matches||[]).indexOf(x);
-    rows+=`<tr class="mclic" onclick="abrirPartido(${gi})"><td class="hora">${d?hmD(d):horaSede(x.time)}</td><td class="pt">${part}</td></tr>`;
+    rows+=`<div class="cal-item mclic" onclick="abrirPartido(${gi})">
+      <div class="cal-l1"><span class="cal-hora">${d?hmD(d):horaSede(x.time)}</span><span class="cal-ronda">${esc(rondaTxt(x))}</span>${envivo}${prov}</div>
+      <div class="cal-l2">${flagImg(t1)}<span class="cal-eq">${esc(corto(t1,16))}</span>${mid}<span class="cal-eq r">${esc(corto(t2,16))}</span>${flagImg(t2)}</div>
+    </div>`;
   }
   const chips=[["all","Todos"],["prox","Desde hoy"],["jug","Jugados"]].map(([k,d])=>
     `<button class="fbtn ${CALFILT===k?'on':''}" onclick="setCalFilter('${k}')">${d}</button>`).join("");
@@ -1142,7 +1145,7 @@ function renderCalendario(){
         <div class="fbar"><button class="fbtn" onclick="scrollHoy()">${icon('calendar')} Hoy</button>
           <select class="search" onchange="setCalTeam(this.value)">${opts}</select></div>
         <div class="fbar">${chips}</div>
-        <div class="ftwrap cal-scroll"><table class="rank cal"><tbody>${rows}</tbody></table></div>
+        <div class="cal-list">${rows}</div>
       </div>
     </div>
     <div class="panel cal-right">
@@ -1802,8 +1805,25 @@ body[data-theme="glass"] .md{background:#141d33}
 .pod-it.bronce .pod-m{color:#b5763a}
 .cal-split{display:grid;grid-template-columns:1fr 3fr;gap:16px;align-items:start}
 .cal-left{position:sticky;top:12px}
-.cal-scroll{max-height:74vh;overflow:auto}
-@media(max-width:760px){.cal-split{grid-template-columns:1fr}.cal-left{position:static}.cal-scroll{max-height:none}}
+#news-col{max-height:80vh;overflow:auto;padding-right:4px}
+@media(max-width:760px){.cal-split{grid-template-columns:1fr}.cal-left{position:static}#news-col{max-height:none;overflow:visible}}
+.cal-list{display:flex;flex-direction:column}
+.cal-day{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:11px 2px 5px;border-bottom:1px solid var(--line);margin-bottom:3px}
+.cal-day:first-child{padding-top:2px}
+.cal-item{padding:7px 8px;border-radius:9px;cursor:pointer;transition:background .12s}
+.cal-item:hover{background:var(--hover)}
+.cal-item+.cal-item{margin-top:1px}
+.cal-l1{display:flex;align-items:center;gap:7px;font-size:10.5px;color:var(--muted);margin-bottom:4px;flex-wrap:wrap}
+.cal-hora{font-weight:800;color:var(--text);font-size:12px}
+.cal-ronda{text-transform:uppercase;letter-spacing:.03em}
+.cal-livetag{color:#ff3b5c;font-weight:800;white-space:nowrap}
+.cal-l2{display:flex;align-items:center;gap:7px;font-size:13.5px}
+.cal-l2 img.flag{width:20px;height:auto;flex:none}
+.cal-eq{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.cal-eq.r{text-align:right}
+.cal-sc{font-weight:800;font-variant-numeric:tabular-nums;flex:none;padding:0 2px}
+.cal-sc.live{color:#ff3b5c}
+.cal-vs{color:var(--muted);font-size:11px;flex:none;padding:0 2px}
 .news-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
 .news-card{display:flex;flex-direction:column;background:var(--panel-bg);border:1px solid var(--line);border-radius:12px;overflow:hidden;text-decoration:none;color:var(--text);transition:transform .12s,box-shadow .12s}
 .news-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-sm)}
