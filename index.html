@@ -378,6 +378,7 @@ select.search{max-width:240px;cursor:pointer}
   <div class="tabpage" id="tab-goleadores" role="tabpanel"></div>
   <div class="tabpage" id="tab-grupos" role="tabpanel"></div>
   <div class="tabpage" id="tab-terceros" role="tabpanel"></div>
+  <div class="tabpage" id="tab-noticias" role="tabpanel"></div>
 </div>
 
 <script>
@@ -1432,7 +1433,7 @@ async function bajarEspnStats(){
 const TABDEF=[["calendario","CALENDARIO","#8b5cf6"],["cuadro","CUADRO / ELIMINATORIAS","#00b86b"],
   ["fifa","RANKING FIFA","#00b8d4"],["stats","ESTADÍSTICAS","#e5103b"],
   ["goleadores","GOLEADORES","#f5b301"],["grupos","FASE DE GRUPOS","#1e6bff"],
-  ["terceros","MEJORES TERCEROS","#ee9b00"]];
+  ["terceros","MEJORES TERCEROS","#ee9b00"],["noticias","NOTICIAS","#ef476f"]];
 function renderTabs(){
   document.getElementById("tabs").innerHTML=TABDEF.map(([k,t,c],i)=>
     `<button class="pill ${i===0?"active":""}" id="pill-${k}" role="tab" aria-selected="${i===0}"
@@ -1444,6 +1445,57 @@ function tab(k,c){
   const pl=document.getElementById("pill-"+k);pl.classList.add("active");pl.style.background=c;pl.setAttribute("aria-selected","true");
   document.querySelectorAll(".tabpage").forEach(p=>p.classList.remove("show"));
   document.getElementById("tab-"+k).classList.add("show");
+  if(k==="noticias")bajarNoticias();
+}
+/* ===== NOTICIAS (resúmenes desde ESPN Deportes, español) ===== */
+const NEWS_URL="https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/news?lang=es&region=ar&limit=40";
+let NOTICIAS=[], _newsCargando=false;
+function _haceRel(iso){const t=Date.parse(iso);if(!t)return "";let s=(Date.now()-t)/1000;if(s<0)s=0;
+  if(s<3600)return "hace "+Math.max(1,Math.round(s/60))+" min";
+  if(s<86400)return "hace "+Math.round(s/3600)+" h";
+  return "hace "+Math.round(s/86400)+" d";}
+function renderNoticias(){
+  const cont=document.getElementById("tab-noticias");if(!cont)return;
+  let cuerpo;
+  if(!NOTICIAS.length){
+    cuerpo=_newsCargando?`<div class="md-load">Cargando noticias…</div>`
+      :`<div class="hint">No se pudieron cargar las noticias (requiere conexión). Probá de nuevo.</div>`;
+  }else{
+    const play=`<span class="news-vid"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>`;
+    cuerpo=`<div class="news-grid">`+NOTICIAS.map(n=>{
+      const vid=n.type==="Media";
+      const img=n.img?`<div class="news-img" style="background-image:url('${n.img}')">${vid?play:""}</div>`:"";
+      return `<a class="news-card" href="${n.link}" target="_blank" rel="noopener">
+        ${img}
+        <div class="news-body">
+          ${vid?`<span class="news-tag">Video</span>`:""}
+          <div class="news-h">${esc(n.headline)}</div>
+          ${n.desc?`<div class="news-d">${esc(n.desc)}</div>`:""}
+          <div class="news-meta">${esc(_haceRel(n.published))} · ESPN</div>
+        </div></a>`;
+    }).join("")+`</div>`;
+  }
+  cont.innerHTML=`<div class="panel"><div class="acc" style="background:#ef476f"></div>
+    <h2>NOTICIAS</h2><div class="psub">Resúmenes · fuente: ESPN Deportes</div>
+    <div class="pbody">${cuerpo}</div></div>`;
+}
+async function bajarNoticias(force){
+  if(_newsCargando)return;
+  if(NOTICIAS.length&&!force){renderNoticias();return;}
+  if(!NOTICIAS.length){try{const c=localStorage.getItem("wc26news");if(c)NOTICIAS=JSON.parse(c)||[];}catch(e){}}
+  _newsCargando=true;renderNoticias();
+  try{
+    const j=await (await fetch(NEWS_URL)).json();
+    const vistos=new Set();
+    NOTICIAS=(j.articles||[]).map(a=>({
+      headline:a.headline||"",desc:a.description||"",type:a.type||"",
+      published:a.published||"",
+      img:((a.images||[])[0]||{}).url||"",
+      link:((a.links||{}).web||{}).href||((a.links||{}).mobile||{}).href||"#"
+    })).filter(n=>{const k=(n.headline||"").toLowerCase().trim();if(!k||vistos.has(k))return false;vistos.add(k);return true;});
+    try{localStorage.setItem("wc26news",JSON.stringify(NOTICIAS));}catch(e){}
+  }catch(e){}
+  _newsCargando=false;renderNoticias();
 }
 function bannerLines(){
   const svg=document.getElementById("bannerLines");
@@ -1744,6 +1796,17 @@ body[data-theme="glass"] .md{background:#141d33}
 .pod-it.oro .pod-m{color:#e3a900}
 .pod-it.plata .pod-m{color:#9aa3b2}
 .pod-it.bronce .pod-m{color:#b5763a}
+.news-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(258px,1fr));gap:14px}
+.news-card{display:flex;flex-direction:column;background:var(--panel-bg);border:1px solid var(--line);border-radius:12px;overflow:hidden;text-decoration:none;color:var(--text);transition:transform .12s,box-shadow .12s}
+.news-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-sm)}
+.news-img{position:relative;width:100%;aspect-ratio:16/9;background:#0a1020 center/cover no-repeat;flex:none}
+.news-vid{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.28)}
+.news-vid svg{width:42px;height:42px;color:#fff;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))}
+.news-body{padding:11px 13px 13px;display:flex;flex-direction:column;gap:5px;flex:1}
+.news-tag{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:#ef476f}
+.news-h{font-weight:800;font-size:14px;line-height:1.25}
+.news-d{font-size:12.5px;color:var(--muted);line-height:1.35}
+.news-meta{font-size:11px;color:var(--muted);margin-top:auto;padding-top:6px;opacity:.85}
 .md-nav{position:fixed;top:50%;transform:translateY(-50%);width:46px;height:46px;border-radius:50%;border:1px solid var(--line2);background:var(--panel-bg);color:var(--text);font-size:26px;line-height:1;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(0,0,0,.4);z-index:10001;opacity:.85}
 .md-nav:hover{opacity:1}
 .md-nav.prev{left:max(12px,calc(50% - 320px))}
