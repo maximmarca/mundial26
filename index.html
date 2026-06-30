@@ -1115,7 +1115,8 @@ function renderCalendario(){
     else mid=`<span class="vs">vs</span>`;
     const prov=(x.num!=null&&!koDefinido(x.num))?`<span class="tag-prov">por confirmar</span>`:"";
     const part=`<span class="tagr">${esc(rondaTxt(x))}</span>${flagImg(t1)} ${esc(corto(t1,15))} ${mid} ${esc(corto(t2,15))} ${flagImg(t2)}${prov}`;
-    rows+=`<tr><td class="hora">${d?hmD(d):horaSede(x.time)}</td><td class="pt">${part}</td>`+
+    const gi=(DATA.matches||[]).indexOf(x);
+    rows+=`<tr class="mclic" onclick="abrirPartido(${gi})"><td class="hora">${d?hmD(d):horaSede(x.time)}</td><td class="pt">${part}</td>`+
       `<td class="sede">${esc(x.ground||"")}</td></tr>`;
   }
   const chips=[["all","Todos"],["prox","Próximos"],["jug","Jugados"]].map(([k,d])=>
@@ -1133,6 +1134,79 @@ function renderCalendario(){
       <div class="ftwrap"><table class="rank cal"><thead><tr>
       <th>HORA</th><th>PARTIDO</th><th>SEDE</th></tr></thead>
       <tbody>${rows}</tbody></table></div></div></div>`;
+}
+/* ===== Ventana emergente: detalle del partido ===== */
+let _modKey=null;
+const _min=x=>x?String(x).trim()+(/['′]$/.test(String(x).trim())?"":"'"):"";
+function abrirPartido(i){
+  const x=(DATA.matches||[])[i]; if(!x)return;
+  const par=(x.num!=null&&KORES[x.num])?KORES[x.num]:[x.team1,x.team2];
+  const t1=par[0],t2=par[1];
+  const ft=(x.score||{}).ft, pen=(x.score||{}).p;
+  const lv=liveDe(t1,t2);
+  const d=localDate(x.date,x.time);
+  let estado;
+  if(lv&&lv.state==="in")estado=`<span class="md-live"><span class="lvdot"></span>EN VIVO · ${esc(lv.clock||lv.detail||"")}</span>`;
+  else if(ft||(lv&&lv.state==="post"))estado=`<span class="md-fin">FINAL${pen?` · pen. ${pen[0]}-${pen[1]}`:""}</span>`;
+  else estado=`<span class="md-prox">${d?diaTxtD(d)+" · "+hmD(d):esc(x.date||"Por definir")}</span>`;
+  const sc=(lv&&(lv.state==="in"||lv.state==="post")&&lv.s1!=null)?[lv.s1,lv.s2]:ft;
+  const marcador=sc?`${sc[0]} <span class="md-gv">-</span> ${sc[1]}`:`<span class="md-vs">vs</span>`;
+  const golLista=arr=>(arr&&arr.length)?arr.map(g=>`<div class="md-ev">⚽ ${esc(g.name||"")} <span class="md-mt">${_min(g.minute)}${g.penalty?" (p)":""}${g.owngoal?" (e/c)":""}</span></div>`).join(""):"";
+  const g1=golLista(x.goals1), g2=golLista(x.goals2);
+  const bloqueGoles=(g1||g2)?`<h4 class="md-h">⚽ Goles</h4><div class="md-cols"><div class="md-col">${g1||'<div class="md-na">—</div>'}</div><div class="md-col r">${g2||'<div class="md-na">—</div>'}</div></div>`:"";
+  const empezo=!!ft||(lv&&lv.state&&lv.state!=="pre");
+  const ov=document.createElement("div");ov.className="md-ov";ov.id="md-ov";
+  ov.innerHTML=`<div class="md" role="dialog" aria-modal="true">
+    <button class="md-x" onclick="cerrarPartido()" aria-label="Cerrar">✕</button>
+    <div class="md-top">
+      <div class="md-team"><div class="md-fl">${flagImg(t1)}</div><div class="md-nm">${esc(t1)}</div></div>
+      <div class="md-sc">${marcador}<div class="md-st">${estado}</div></div>
+      <div class="md-team"><div class="md-fl">${flagImg(t2)}</div><div class="md-nm">${esc(t2)}</div></div>
+    </div>
+    <div class="md-meta">${esc(rondaTxt(x))}${x.ground?` · ${esc(x.ground)}`:""}${d?` · ${diaTxtD(d)} ${hmD(d)}`:(x.date?` · ${esc(x.date)}`:"")}</div>
+    ${bloqueGoles}
+    <div id="md-espn">${empezo?'<div class="md-load">Cargando tarjetas y asistencias…</div>':''}</div>
+  </div>`;
+  ov.addEventListener("click",e=>{if(e.target===ov)cerrarPartido();});
+  document.body.appendChild(ov);document.body.style.overflow="hidden";
+  if(empezo){_modKey=t1+"|"+t2;detallePartidoEspn(t1,t2,x.date,_modKey);}
+}
+function cerrarPartido(){const ov=document.getElementById("md-ov");if(ov)ov.remove();document.body.style.overflow="";_modKey=null;}
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&document.getElementById("md-ov"))cerrarPartido();});
+async function _espnEventMatch(t1,t2,date){
+  const base=date?new Date(date+"T12:00:00Z"):new Date();
+  const days=[0,1,-1].map(o=>_ymd(new Date(+base+o*864e5)));
+  for(const ymd of days){
+    let d; try{d=await (await fetch(LIVE_BASE+"?dates="+ymd)).json();}catch(e){continue;}
+    for(const ev of (d.events||[])){const c=(ev.competitions||[])[0]||{};const cs=c.competitors||[];
+      const H=cs.find(z=>z.homeAway==="home")||cs[0]||{},Aw=cs.find(z=>z.homeAway==="away")||cs[1]||{};
+      const hn=mapTeam((H.team||{}).displayName||""),an=mapTeam((Aw.team||{}).displayName||"");
+      if((hn===t1||hn===t2)&&(an===t1||an===t2)&&hn!==an){
+        let j; try{j=await (await fetch(espnSummary(ev.id))).json();}catch(e){return null;}
+        return {home:hn,away:an,keyEvents:(j.keyEvents||[])};}
+    }
+  }
+  return null;
+}
+async function detallePartidoEspn(t1,t2,date,key){
+  const ev=await _espnEventMatch(t1,t2,date);
+  const box=document.getElementById("md-espn");
+  if(!box||_modKey!==key)return;
+  if(!ev){box.innerHTML=`<div class="md-na2">Tarjetas/asistencias no disponibles todavía</div>`;return;}
+  const lado=tm=>{const n=mapTeam(tm);return n===t1?0:1;};
+  const A=[[],[]],Y=[[],[]],R=[[],[]];
+  for(const k of ev.keyEvents){const tx=(k.type||{}).text||"";const ps=k.participants||[];const tm=(k.team||{}).displayName||"";const mn=((k.clock||{}).displayValue)||"";const s=lado(tm);
+    if(tx.includes("Goal")){const as=ps[1]&&(ps[1].athlete||{}).displayName;if(as)A[s].push((as+" "+mn).trim());}
+    else if(tx.includes("Red")){const pl=ps[0]&&(ps[0].athlete||{}).displayName;if(pl)R[s].push((pl+" "+mn).trim());}
+    else if(tx.includes("Yellow")){const pl=ps[0]&&(ps[0].athlete||{}).displayName;if(pl)Y[s].push((pl+" "+mn).trim());}
+  }
+  const list=(arr,ic)=>arr.length?arr.map(s=>`<div class="md-ev">${ic} ${esc(s)}</div>`).join(""):"";
+  const two=(l,r)=>`<div class="md-cols"><div class="md-col">${l||'<div class="md-na">—</div>'}</div><div class="md-col r">${r||'<div class="md-na">—</div>'}</div></div>`;
+  let html="";
+  if(A[0].length||A[1].length)html+=`<h4 class="md-h">🅰️ Asistencias</h4>`+two(list(A[0],"🅰️"),list(A[1],"🅰️"));
+  const tarj=s=>R[s].map(v=>`<div class="md-ev">🟥 ${esc(v)}</div>`).join("")+Y[s].map(v=>`<div class="md-ev">🟨 ${esc(v)}</div>`).join("");
+  if(Y[0].length||Y[1].length||R[0].length||R[1].length)html+=`<h4 class="md-h">Tarjetas</h4>`+two(tarj(0),tarj(1));
+  box.innerHTML=html||`<div class="md-na2">Sin tarjetas ni asistencias registradas</div>`;
 }
 function flip(id){FLIP[id]=!FLIP[id];const el=document.getElementById(id);
   el.classList.toggle("flip");el.style.transform="";el.classList.remove("tilt");}
@@ -1554,7 +1628,33 @@ function exportarImagen(){
 .ctbtn{border:1px solid var(--line2);background:var(--pill-bg);color:inherit;border-radius:10px;padding:7px 12px;font-weight:800;font-size:13px;cursor:pointer}
 .ctbtn:hover{background:var(--hover)}
 #toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:#171d31;color:#fff;border:1px solid #2a3552;padding:10px 16px;border-radius:12px;font-weight:700;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:.25s;z-index:9999}
-#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}`;
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+tr.mclic{cursor:pointer}
+tr.mclic:hover td{background:var(--hover)}
+.md-ov{position:fixed;inset:0;background:rgba(0,0,0,.62);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;z-index:10000;padding:16px;animation:mdfade .15s ease}
+@keyframes mdfade{from{opacity:0}to{opacity:1}}
+.md{position:relative;background:var(--card);color:var(--text);border:1px solid var(--line2);border-radius:16px;max-width:520px;width:100%;max-height:88vh;overflow:auto;padding:22px 20px;box-shadow:0 20px 60px rgba(0,0,0,.55)}
+.md-x{position:absolute;top:8px;right:10px;background:none;border:none;color:var(--text);font-size:20px;line-height:1;cursor:pointer;opacity:.55}
+.md-x:hover{opacity:1}
+.md-top{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;margin:4px 0}
+.md-team{text-align:center}
+.md-fl img{width:48px;height:auto;border-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.md-nm{font-weight:800;font-size:14px;margin-top:7px}
+.md-sc{text-align:center;font-size:30px;font-weight:900;font-variant-numeric:tabular-nums;white-space:nowrap}
+.md-gv{opacity:.35}
+.md-vs{font-size:18px;opacity:.5;font-weight:700}
+.md-st{margin-top:7px;font-size:12px;font-weight:800}
+.md-live{color:#ff3b5c;display:inline-flex;align-items:center;gap:5px}
+.md-fin{color:var(--muted)}.md-prox{color:var(--muted);font-weight:700}
+.md-meta{text-align:center;color:var(--muted);font-size:12px;margin:12px 0 2px;border-bottom:1px solid var(--line);padding-bottom:12px}
+.md-h{margin:15px 0 7px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;opacity:.8}
+.md-cols{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.md-col .md-ev{text-align:left}.md-col.r .md-ev{text-align:right}
+.md-ev{font-size:13px;padding:3px 0;line-height:1.35}
+.md-mt{color:var(--muted);font-size:11px}
+.md-na{color:var(--muted);opacity:.5}
+.md-na2{color:var(--muted);font-size:12px;text-align:center;padding:10px}
+.md-load{color:var(--muted);font-size:12px;text-align:center;padding:12px}`;
 document.head.appendChild(s);})();
 
 /* ============================ INIT ============================ */
