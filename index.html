@@ -1662,7 +1662,26 @@ function initParallax(){
   bn.addEventListener("mouseleave",()=>{const ti=bn.querySelector(".title"),ln=bn.querySelector(".lines");
     if(ti)ti.style.transform="";if(ln)ln.style.transform="";});
 }
-if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}
+if("serviceWorker" in navigator){
+  let _swRefresh=false; const _swHadCtrl=!!navigator.serviceWorker.controller;
+  // cuando un SW nuevo toma control, recargar una sola vez (no en la primera instalacion)
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{
+    if(_swRefresh||!_swHadCtrl)return; _swRefresh=true;
+    try{toast("Actualizando a la nueva versión…");}catch(e){}
+    setTimeout(()=>location.reload(),300);
+  });
+  window.addEventListener("load",()=>{
+    navigator.serviceWorker.register("sw.js").then(reg=>{
+      reg.update().catch(()=>{});
+      reg.addEventListener("updatefound",()=>{const nw=reg.installing;if(nw)nw.addEventListener("statechange",()=>{
+        if(nw.state==="installed"&&navigator.serviceWorker.controller){try{toast("Nueva versión disponible…");}catch(e){}}
+      });});
+    }).catch(()=>{});
+    // al volver a la app (PWA reabierta / pestaña al frente) chequear si hay version nueva
+    document.addEventListener("visibilitychange",()=>{if(!document.hidden)
+      navigator.serviceWorker.getRegistration().then(r=>{if(r)r.update().catch(()=>{});}).catch(()=>{});});
+  });
+}
 /* ---- instalar app (PWA) ---- */
 let deferredPrompt=null;
 const appInstalada=()=>(window.matchMedia&&window.matchMedia("(display-mode: standalone)").matches)||navigator.standalone===true;
