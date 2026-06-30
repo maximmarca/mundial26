@@ -735,11 +735,10 @@ function renderTerceros(rank){
     const cls=i<8?"ok":"no";let est=i<8?"CLASIFICA":"eliminado";
     const slot=Object.entries(MAPA3).find(([s,g])=>g===L);
     if(i<8&&slot)est="→ partido "+slot[0];
-    const prov=(i<8&&!_allGrpReal())?` <span class="tag-prov">por confirmar</span>`:"";
     return `<tr class="${cls}"><td>${i+1}. ${flagImg(e.eq)} ${esc(corto(e.eq,20))} (${L})</td>
       <td class="center">${e.pj}</td><td class="center">${e.dg>=0?"+":""}${e.dg}</td>
       <td class="center">${e.gf}</td><td class="center"><b>${e.pts}</b></td>
-      <td class="center">${est}${prov}</td></tr>`;}).join("");
+      <td class="center">${est}</td></tr>`;}).join("");
   document.getElementById("tab-terceros").innerHTML=`<div class="panel narrow">
     <div class="acc" style="background:var(--gold)"></div>
     <h2>RANKING DE TERCEROS — LOS 8 MEJORES CLASIFICAN</h2>
@@ -765,7 +764,7 @@ function mboxmHTML(n){
       `${flagImg(eq)}<span>${esc(corto(eq,20))||"(por definir)"}</span>${gol(eq)}</div>`;};
   const prov=(!real&&!koDefinido(n))?" prov":"";
   const extra=sR?(sR.p?`<div class="kosc">pen. ${sR.p[0]}-${sR.p[1]}</div>`:""):_koLive(t1,t2);
-  return `<div class="mboxm ${fin?'final':(real?'real':'')}${prov}"><div class="cab cabc" onclick="abrirPartidoNum(${n})" title="Ver detalle del partido">#${n} ${META[n]?META[n].fecha:""}${prov?' · por confirmar':''} ${icon('info')}</div>${row(t1)}${row(t2)}${extra}</div>`;
+  return `<div class="mboxm ${fin?'final':(real?'real':'')}${prov}"><div class="cab cabc" onclick="abrirPartidoNum(${n})" title="Ver detalle del partido">#${n} ${META[n]?META[n].fecha:""} ${icon('info')}</div>${row(t1)}${row(t2)}${extra}</div>`;
 }
 function renderCuadroMobile(){
   const RM=[["DIECISEISAVOS",Array.from({length:16},(_,i)=>73+i)],["OCTAVOS",[89,90,91,92,93,94,95,96]],
@@ -1124,11 +1123,10 @@ function renderCalendario(){
     else if(ft)mid=`<span class="cal-sc">${ft[0]}-${ft[1]}</span>`;
     else if(lv&&lv.state==="post")mid=`<span class="cal-sc">${lv.s1}-${lv.s2}</span>`;
     else mid=`<span class="cal-vs">vs</span>`;
-    const prov=(x.num!=null&&!koDefinido(x.num))?`<span class="tag-prov">por confirmar</span>`:"";
     const envivo=(lv&&lv.state==="in")?`<span class="cal-livetag">● EN VIVO ${esc(lv.clock||"")}</span>`:"";
     const gi=(DATA.matches||[]).indexOf(x);
     rows+=`<div class="cal-item mclic" onclick="abrirPartido(${gi})">
-      <div class="cal-l1"><span class="cal-hora">${d?hmD(d):horaSede(x.time)}</span><span class="cal-ronda">${esc(rondaTxt(x))}</span>${envivo}${prov}</div>
+      <div class="cal-l1"><span class="cal-hora">${d?hmD(d):horaSede(x.time)}</span><span class="cal-ronda">${esc(rondaTxt(x))}</span>${envivo}</div>
       <div class="cal-l2">${flagImg(t1)}<span class="cal-eq">${esc(corto(t1,16))}</span>${mid}<span class="cal-eq r">${esc(corto(t2,16))}</span>${flagImg(t2)}</div>
     </div>`;
   }
@@ -1818,7 +1816,7 @@ body[data-theme="glass"] .md{background:#141d33}
 .cal-ronda{text-transform:uppercase;letter-spacing:.03em}
 .cal-livetag{color:#ff3b5c;font-weight:800;white-space:nowrap}
 .cal-l2{display:flex;align-items:center;gap:7px;font-size:13.5px}
-.cal-l2 img.flag{width:20px;height:auto;flex:none}
+.cal-l2 img.flag{flex:none}
 .cal-eq{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
 .cal-eq.r{text-align:right}
 .cal-sc{font-weight:800;font-variant-numeric:tabular-nums;flex:none;padding:0 2px}
