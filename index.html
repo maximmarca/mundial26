@@ -1697,7 +1697,7 @@ async function instalarApp(){
 actualizarBotonInstalar();
 
 /* ---------- Temas ---------- */
-const THEMES_UI=[["airy","Claro"],["glass","Oscuro"],["bold","Vibrante"],["argentina","Argentina"]];
+const THEMES_UI=[["airy","Claro"],["glass","Oscuro"],["bold","Vibrante"],["argentina","Argentina"],["chile","Chile"]];
 let THEME=localStorage.getItem("wc26theme2")||"glass";
 function applyTheme(){
   if(THEME==="airy")document.body.removeAttribute("data-theme");
@@ -1709,7 +1709,34 @@ function applyTheme(){
   const id=document.getElementById("idolos");if(id){id.hidden=!arg;if(arg)cargarIdolos();}
   bannerLines();
 }
-function setTheme(t){THEME=t;localStorage.setItem("wc26theme2",t);applyTheme();}
+function setTheme(t){if(t==="chile"){chileMsg();return;}THEME=t;localStorage.setItem("wc26theme2",t);applyTheme();}
+/* Easter egg: Chile no clasificó al Mundial 2026. Muestra el cartel 10s y vuelve a la vista anterior. */
+function chileMsg(){
+  const prev=document.getElementById("chile-egg");if(prev)prev.remove();
+  const o=document.createElement("div");o.id="chile-egg";
+  o.innerHTML=`<div class="chile-card"><div class="chile-flag">🇨🇱</div>
+    <div class="chile-t">Equipo no encontrado</div>
+    <div class="chile-s">vuelva en 2030 <span>(si clasifica)</span></div>
+    <div class="chile-bar"><i></i></div></div>`;
+  const cerrar=()=>{o.classList.remove("show");setTimeout(()=>o.remove(),350);};
+  o.addEventListener("click",cerrar);
+  document.body.appendChild(o);
+  requestAnimationFrame(()=>o.classList.add("show"));
+  setTimeout(cerrar,10000);
+}
+(function(){const s=document.createElement("style");s.textContent=`
+#chile-egg{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(5,8,18,.72);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);z-index:10000;opacity:0;transition:opacity .3s;cursor:pointer}
+#chile-egg.show{opacity:1}
+.chile-card{background:#fff;color:#0e2a44;border-radius:18px;padding:26px 30px;width:360px;max-width:90vw;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5);transform:scale(.9);transition:transform .3s}
+#chile-egg.show .chile-card{transform:scale(1)}
+.chile-flag{font-size:52px;line-height:1;margin-bottom:6px}
+.chile-t{font-size:22px;font-weight:900;letter-spacing:.2px}
+.chile-s{font-size:16px;margin-top:6px;color:#444}
+.chile-s span{color:#d52b1e;font-weight:800}
+.chile-bar{height:5px;background:#eee;border-radius:5px;margin-top:18px;overflow:hidden}
+.chile-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#0033a0,#fff,#d52b1e);animation:chilebar 10s linear forwards}
+@keyframes chilebar{to{width:100%}}`;
+document.head.appendChild(s);})();
 
 /* ============================ MARCADOR EN VIVO (ESPN) ============================ */
 /* Fuente: site.api.espn.com (CORS abierto, sin key). Solo overlay visual: NO toca el simulador. */
