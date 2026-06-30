@@ -361,7 +361,7 @@ select.search{max-width:240px;cursor:pointer}
   <button class="btn install" id="btnInstall" onclick="instalarApp()">📥 INSTALAR APP</button>
   <span class="simacts" id="simacts" hidden>
     <button class="btn green" onclick="recalcular()">RECALCULAR</button>
-    <button class="btn sim" onclick="simularTodo()">⚽ SIMULAR TODO</button>
+    <button class="btn sim" onclick="simularTodo()"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 7.2l3.6 2.6-1.37 4.2H9.77L8.4 9.8z" fill="currentColor" stroke="none"/></svg> SIMULAR TODO</button>
     <button class="btn ghost" onclick="restaurar()">RESTAURAR REALES</button>
   </span>
   <span class="simnote" id="simnote">✏️ Editá un marcador para habilitar las acciones de simulación</span>
@@ -765,7 +765,7 @@ function mboxmHTML(n){
       `${flagImg(eq)}<span>${esc(corto(eq,20))||"(por definir)"}</span>${gol(eq)}</div>`;};
   const prov=(!real&&!koDefinido(n))?" prov":"";
   const extra=sR?(sR.p?`<div class="kosc">pen. ${sR.p[0]}-${sR.p[1]}</div>`:""):_koLive(t1,t2);
-  return `<div class="mboxm ${fin?'final':(real?'real':'')}${prov}"><div class="cab cabc" onclick="abrirPartidoNum(${n})" title="Ver detalle del partido">#${n} ${META[n]?META[n].fecha:""}${prov?' · por confirmar':''} ℹ️</div>${row(t1)}${row(t2)}${extra}</div>`;
+  return `<div class="mboxm ${fin?'final':(real?'real':'')}${prov}"><div class="cab cabc" onclick="abrirPartidoNum(${n})" title="Ver detalle del partido">#${n} ${META[n]?META[n].fecha:""}${prov?' · por confirmar':''} ${icon('info')}</div>${row(t1)}${row(t2)}${extra}</div>`;
 }
 function renderCuadroMobile(){
   const RM=[["DIECISEISAVOS",Array.from({length:16},(_,i)=>73+i)],["OCTAVOS",[89,90,91,92,93,94,95,96]],
@@ -779,7 +779,7 @@ function renderCuadroMobile(){
   if(subM&&!esEtiqueta(subM))
     h+=`<div class="champ silver" style="position:static;width:auto;margin:0 0 12px">
       <div class="hd">SUBCAMPEÓN</div>
-      <div class="nm">🥈 ${flagImg(subM)} ${esc(corto(subM,18))}</div></div>`;
+      <div class="nm"><span style="color:#9aa3b2">${icon('medal')}</span> ${flagImg(subM)} ${esc(corto(subM,18))}</div></div>`;
   if(w3m&&!esEtiqueta(w3m))
     h+=`<div class="champ bronze" style="position:static;width:auto;margin:0 0 12px">
       <div class="hd">3.º PUESTO</div><div class="cup">${trofeoSVG("bronce",44)}</div>
@@ -833,7 +833,7 @@ function renderCuadro(){
   const medalla=(ic,lbl,eq,cl)=>(eq&&!esEtiqueta(eq))?`<div class="pod-it ${cl}"><span class="pod-m">${ic}</span><div class="pod-tx"><span class="pod-l">${lbl}</span><span class="pod-n">${flagImg(eq)} ${esc(corto(eq,18))}</span></div></div>`:"";
   let podioHTML="";
   if(champ&&!esEtiqueta(champ))
-    podioHTML=`<div class="podiobar"><div class="cup">${trofeoSVG("mundial",46)}</div>${medalla("🥇","Campeón",champ,"oro")}${medalla("🥈","Subcampeón",sub,"plata")}${medalla("🥉","3.º puesto",tercero,"bronce")}</div>`;
+    podioHTML=`<div class="podiobar"><div class="cup">${trofeoSVG("mundial",46)}</div>${medalla(icon('medal'),"Campeón",champ,"oro")}${medalla(icon('medal'),"Subcampeón",sub,"plata")}${medalla(icon('medal'),"3.º puesto",tercero,"bronce")}</div>`;
   const sc=document.getElementById("tab-cuadro");
   const prev=sc.querySelector(".bracket-scroll");
   const sx=prev?prev.scrollLeft:0, sy=prev?prev.scrollTop:0;
@@ -852,7 +852,7 @@ function boxHtml(n,x,y){
       ${flagImg(eq)}<span>${esc(corto(eq,16))||"(por definir)"}</span>${gol(eq)}</div>`;};
   const extra=sR?(sR.p?`<div class="kosc">pen. ${sR.p[0]}-${sR.p[1]}</div>`:""):_koLive(t1,t2);
   return `<div class="${cls}" style="left:${x}px;top:${y}px">
-    <div class="cab cabc" onclick="abrirPartidoNum(${n})" title="Ver detalle del partido">#${n} ${META[n]?META[n].fecha:""} ℹ️</div>${row(t1)}${row(t2)}${extra}</div>`;
+    <div class="cab cabc" onclick="abrirPartidoNum(${n})" title="Ver detalle del partido">#${n} ${META[n]?META[n].fecha:""} ${icon('info')}</div>${row(t1)}${row(t2)}${extra}</div>`;
 }
 function elegir(n,eq){KOWIN[n]=eq;resolverCuadro();renderCuadro();}
 
@@ -1151,6 +1151,15 @@ let _curIdx=-1;
 function _navOrden(){const ms=(DATA&&DATA.matches)||[];
   const ck=x=>{const dd=localDate(x.date,x.time);return dd?dd.getTime():Date.parse((x.date||"2100-01-01")+"T00:00:00Z");};
   return ms.map((x,i)=>i).filter(i=>ms[i].team1&&ms[i].team2).sort((a,b)=>ck(ms[a])-ck(ms[b]));}
+/* Iconos monocromaticos (heredan currentColor), estilo formal */
+const ICN={
+  ball:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 7.2l3.6 2.6-1.37 4.2H9.77L8.4 9.8z" fill="currentColor" stroke="none"/></svg>',
+  xmiss:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  assist:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15c5-8 13-8 18 0"/><path d="M16 5h5v5"/></svg>',
+  info:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11.2v5M12 7.6v.01"/></svg>',
+  medal:'<svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M7.5 2h3l1.7 4.3-2.4 1.6z" opacity=".7"/><path d="M16.5 2h-3l-1.7 4.3 2.4 1.6z" opacity=".7"/><circle cx="12" cy="15" r="6.1"/></svg>'
+};
+function icon(n){return ICN[n]||"";}
 function abrirPartido(i){
   const x=(DATA.matches||[])[i]; if(!x)return;
   const exist=document.getElementById("md-ov");if(exist)exist.remove();
@@ -1167,16 +1176,16 @@ function abrirPartido(i){
   else estado=`<span class="md-prox">${d?diaTxtD(d)+" · "+hmD(d):esc(x.date||"Por definir")}</span>`;
   const sc=(lv&&(lv.state==="in"||lv.state==="post")&&lv.s1!=null)?[lv.s1,lv.s2]:ft;
   const marcador=sc?`${sc[0]} <span class="md-gv">-</span> ${sc[1]}`:`<span class="md-vs">vs</span>`;
-  const golLista=arr=>(arr&&arr.length)?arr.map(g=>`<div class="md-ev">⚽ ${esc(g.name||"")} <span class="md-mt">${_min(g.minute)}${g.penalty?" (p)":""}${g.owngoal?" (e/c)":""}</span></div>`).join(""):"";
+  const golLista=arr=>(arr&&arr.length)?arr.map(g=>`<div class="md-ev">${icon('ball')} ${esc(g.name||"")} <span class="md-mt">${_min(g.minute)}${g.penalty?" (p)":""}${g.owngoal?" (e/c)":""}</span></div>`).join(""):"";
   const g1=golLista(x.goals1), g2=golLista(x.goals2);
-  const bloqueGoles=(g1||g2)?`<h4 class="md-h">⚽ Goles</h4><div class="md-cols"><div class="md-col">${g1||'<div class="md-na">—</div>'}</div><div class="md-col r">${g2||'<div class="md-na">—</div>'}</div></div>`:"";
+  const bloqueGoles=(g1||g2)?`<h4 class="md-h">${icon('ball')} Goles</h4><div class="md-cols"><div class="md-col">${g1||'<div class="md-na">—</div>'}</div><div class="md-col r">${g2||'<div class="md-na">—</div>'}</div></div>`:"";
   const empezo=!!ft||(lv&&lv.state&&lv.state!=="pre");
   const ov=document.createElement("div");ov.className="md-ov";ov.id="md-ov";
   ov.innerHTML=`<div class="md" role="dialog" aria-modal="true">
     <button class="md-x" onclick="cerrarPartido()" aria-label="Cerrar">✕</button>
     <div class="md-top">
       <div class="md-team"><div class="md-fl">${flagImg(t1)}</div><div class="md-nm">${esc(t1)}</div></div>
-      <div class="md-sc">${marcador}<div class="md-st">${estado}</div>${pen?`<div class="md-pen">🥅 Penales <b>${pen[0]} - ${pen[1]}</b></div>`:""}</div>
+      <div class="md-sc">${marcador}<div class="md-st">${estado}</div>${pen?`<div class="md-pen">${icon('ball')} Penales <b>${pen[0]} - ${pen[1]}</b></div>`:""}</div>
       <div class="md-team"><div class="md-fl">${flagImg(t2)}</div><div class="md-nm">${esc(t2)}</div></div>
     </div>
     <div class="md-meta">${esc(rondaTxt(x))}${x.ground?` · ${esc(x.ground)}`:""}${d?` · ${diaTxtD(d)} ${hmD(d)}`:(x.date?` · ${esc(x.date)}`:"")}</div>
@@ -1223,14 +1232,20 @@ async function detallePartidoEspn(t1,t2,date,key){
   const list=(arr,ic)=>arr.length?arr.map(s=>`<div class="md-ev">${ic} ${esc(s)}</div>`).join(""):"";
   const two=(l,r)=>`<div class="md-cols"><div class="md-col">${l||'<div class="md-na">—</div>'}</div><div class="md-col r">${r||'<div class="md-na">—</div>'}</div></div>`;
   let html="";
-  if(A[0].length||A[1].length)html+=`<h4 class="md-h">🅰️ Asistencias</h4>`+two(list(A[0],"🅰️"),list(A[1],"🅰️"));
-  const tarj=s=>R[s].map(v=>`<div class="md-ev">🟥 ${esc(v)}</div>`).join("")+Y[s].map(v=>`<div class="md-ev">🟨 ${esc(v)}</div>`).join("");
-  if(Y[0].length||Y[1].length||R[0].length||R[1].length)html+=`<h4 class="md-h">Tarjetas</h4>`+two(tarj(0),tarj(1));
+  if(A[0].length||A[1].length)html+=`<h4 class="md-h">${icon('assist')} Asistencias</h4>`+two(list(A[0],icon('assist')),list(A[1],icon('assist')));
+  const tarj=s=>R[s].map(v=>`<div class="md-ev"><span class="cardico r"></span> ${esc(v)}</div>`).join("")+Y[s].map(v=>`<div class="md-ev"><span class="cardico y"></span> ${esc(v)}</div>`).join("");
+  if(Y[0].length||Y[1].length||R[0].length||R[1].length)html+=`<h4 class="md-h"><span class="cardico y"></span><span class="cardico r"></span> Tarjetas</h4>`+two(tarj(0),tarj(1));
   if(ev.shootout&&ev.shootout.length){
     const PEN=[[],[]];
-    for(const sh of ev.shootout){const s=lado(sh.team);
-      for(const k of (sh.shots||[]))PEN[s].push(`<div class="md-ev">${k.didScore?"✅":"❌"} ${esc(k.player||"")}</div>`);}
-    if(PEN[0].length||PEN[1].length)html+=`<h4 class="md-h">🥅 Tanda de penales</h4>`+two(PEN[0].join(""),PEN[1].join(""));
+    for(const sh of ev.shootout){const s=lado(sh.team);for(const k of (sh.shots||[]))PEN[s].push(k);}
+    if(PEN[0].length||PEN[1].length){
+      const cel=k=>`<div class="md-pev ${k.didScore?'ok':'miss'}">${k.didScore?icon('ball'):icon('xmiss')}<span>${esc(k.player||"")}</span></div>`;
+      html+=`<h4 class="md-h center">${icon('ball')} Tanda de penales</h4>
+        <div class="md-pen-grid">
+          <div class="md-pen-hd">${esc(corto(t1,14))}</div><div class="md-pen-hd">${esc(corto(t2,14))}</div>
+          <div>${PEN[0].map(cel).join("")}</div><div>${PEN[1].map(cel).join("")}</div>
+        </div>`;
+    }
   }
   box.innerHTML=html||`<div class="md-na2">Sin tarjetas ni asistencias registradas</div>`;
 }
@@ -1695,8 +1710,24 @@ body[data-theme="glass"] .md{background:#141d33}
 .md-na{color:var(--muted);opacity:.5}
 .md-na2{color:var(--muted);font-size:12px;text-align:center;padding:10px}
 .md-load{color:var(--muted);font-size:12px;text-align:center;padding:12px}
-.md-pen{margin-top:6px;font-size:13px;font-weight:700;color:var(--gold)}
+.md-pen{margin-top:6px;font-size:13px;font-weight:700;color:var(--gold);display:inline-flex;align-items:center;gap:5px}
 .md-pen b{font-variant-numeric:tabular-nums}
+.ic{width:1.05em;height:1.05em;display:inline-block;vertical-align:-0.16em;flex:none}
+.cardico{display:inline-block;width:11px;height:15px;border-radius:2px;vertical-align:-2px;box-shadow:0 0 0 1px rgba(0,0,0,.18) inset}
+.cardico.y{background:#f5b301}
+.cardico.r{background:#e5103b}
+.md-h .cardico{margin-right:2px}
+.md-h.center{text-align:center;justify-content:center}
+.md-pen-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;text-align:center;margin-top:2px}
+.md-pen-hd{font-weight:800;font-size:12.5px;padding-bottom:5px;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.md-pev{display:flex;align-items:center;justify-content:center;gap:6px;font-size:13px;padding:3px 0;color:var(--text)}
+.md-pev.ok .ic{color:var(--green)}
+.md-pev.miss .ic{color:var(--red)}
+.pod-it .pod-m{display:inline-flex}
+.pod-it .pod-m .ic{width:22px;height:22px}
+.pod-it.oro .pod-m{color:#e3a900}
+.pod-it.plata .pod-m{color:#9aa3b2}
+.pod-it.bronce .pod-m{color:#b5763a}
 .md-nav{position:fixed;top:50%;transform:translateY(-50%);width:46px;height:46px;border-radius:50%;border:1px solid var(--line2);background:var(--panel-bg);color:var(--text);font-size:26px;line-height:1;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(0,0,0,.4);z-index:10001;opacity:.85}
 .md-nav:hover{opacity:1}
 .md-nav.prev{left:max(12px,calc(50% - 320px))}
