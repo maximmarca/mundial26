@@ -469,7 +469,7 @@ const THEMES={
 const DEF_THEME={pri:"#3a567a",sec:"#ffffff",acc:"#2ba4ff",dark:"#152238",pat:"diag"};
 
 /* ============================ ESTADO ============================ */
-let DATA=null, GM=[], META={}, SCORES={}, REAL={}, KOWIN={}, KOREAL={}, RES={};
+let DATA=null, GM=[], META={}, SCORES={}, REAL={}, KOWIN={}, KOREAL={}, KOSCORE={}, RES={};
 let TABLAS={}, MAPA3={}, KORES={}, ESTILO="spotlight", FLIP={}, PHOTOS={};
 let FSORT="fifa", FDIR=1, FFILTER="all", FQ="", CALFILT="all", CALTEAM="all";
 /* asistencias y tarjetas (fuente: ESPN, gratis, sin key, CORS *) — conteo COMPLETO partido x partido */
@@ -513,7 +513,7 @@ async function actualizar(){
   }catch(e){setStatus("No se pudo actualizar (sin internet)");}
 }
 function parse(){
-  GM=[];META={};REAL={};KOREAL={};
+  GM=[];META={};REAL={};KOREAL={};KOSCORE={};
   for(const m of (DATA.matches||[])){
     const g=m.group||"";const num=m.num;
     if(g.startsWith("Group ")){
@@ -530,6 +530,7 @@ function parse(){
         let w=ft[0]>ft[1]?m.team1:(ft[1]>ft[0]?m.team2:null);
         if(!w&&Array.isArray(sc.p))w=sc.p[0]>sc.p[1]?m.team1:m.team2;
         if(w)KOREAL[+num]=w;
+        KOSCORE[+num]={t1:m.team1,t2:m.team2,ft:[+ft[0],+ft[1]],p:Array.isArray(sc.p)?[+sc.p[0],+sc.p[1]]:null};
       }
     }
   }
@@ -755,12 +756,14 @@ const LEFT_LEAF=[73,75,74,77,83,84,81,82], RIGHT_LEAF=[76,78,79,80,86,88,85,87];
 const LEFT_SET=new Set([...LEFT_LEAF,89,90,93,94,97,98,101]);
 function mboxmHTML(n){
   const par=KORES[n]||["",""],t1=par[0],t2=par[1];
-  const real=n in KOREAL,fin=n===104,gan=KOWIN[n];
+  const real=n in KOREAL,fin=n===104,gan=KOWIN[n];const sR=KOSCORE[n];
+  const gol=eq=>{if(!sR)return "";const g=eq===sR.t1?sR.ft[0]:(eq===sR.t2?sR.ft[1]:null);return g==null?"":`<b class="kog">${g}</b>`;};
   const row=eq=>{const w=gan===eq&&eq,clic=eq&&!esEtiqueta(eq);
     return `<div class="rowm ${w?'win':''} ${clic?'clic':''}" ${clic?`onclick="elegir(${n},'${esc(eq).replace(/'/g,"\\'")}')"`:""}>`+
-      `${flagImg(eq)}<span>${esc(corto(eq,20))||"(por definir)"}</span></div>`;};
+      `${flagImg(eq)}<span>${esc(corto(eq,20))||"(por definir)"}</span>${gol(eq)}</div>`;};
   const prov=(!real&&!koDefinido(n))?" prov":"";
-  return `<div class="mboxm ${fin?'final':(real?'real':'')}${prov}"><div class="cab">#${n} ${META[n]?META[n].fecha:""}${prov?' · por confirmar':''}</div>${row(t1)}${row(t2)}${_koLive(t1,t2)}</div>`;
+  const extra=sR?(sR.p?`<div class="kosc">pen. ${sR.p[0]}-${sR.p[1]}</div>`:""):_koLive(t1,t2);
+  return `<div class="mboxm ${fin?'final':(real?'real':'')}${prov}"><div class="cab">#${n} ${META[n]?META[n].fecha:""}${prov?' · por confirmar':''}</div>${row(t1)}${row(t2)}${extra}</div>`;
 }
 function renderCuadroMobile(){
   const RM=[["DIECISEISAVOS",Array.from({length:16},(_,i)=>73+i)],["OCTAVOS",[89,90,91,92,93,94,95,96]],
@@ -838,12 +841,14 @@ function renderCuadro(){
 function boxHtml(n,x,y){
   const[t1,t2]=KORES[n]||["",""];const real=n in KOREAL,fin=n===104;
   const cls="mbox"+(fin?" final":(real?" real":""))+((!real&&!koDefinido(n))?" prov":"");
-  const gan=KOWIN[n];
+  const gan=KOWIN[n];const sR=KOSCORE[n];
+  const gol=eq=>{if(!sR)return "";const g=eq===sR.t1?sR.ft[0]:(eq===sR.t2?sR.ft[1]:null);return g==null?"":`<b class="kog">${g}</b>`;};
   const row=(eq)=>{const w=gan===eq&&eq,clic=eq&&!esEtiqueta(eq);
     return `<div class="row ${w?"win":""} ${clic?"clic":""}" ${clic?`onclick="elegir(${n},'${esc(eq).replace(/'/g,"\\'")}')"`:""}>
-      ${flagImg(eq)}<span>${esc(corto(eq,16))||"(por definir)"}</span></div>`;};
+      ${flagImg(eq)}<span>${esc(corto(eq,16))||"(por definir)"}</span>${gol(eq)}</div>`;};
+  const extra=sR?(sR.p?`<div class="kosc">pen. ${sR.p[0]}-${sR.p[1]}</div>`:""):_koLive(t1,t2);
   return `<div class="${cls}" style="left:${x}px;top:${y}px">
-    <div class="cab">#${n} ${META[n]?META[n].fecha:""}</div>${row(t1)}${row(t2)}${_koLive(t1,t2)}</div>`;
+    <div class="cab">#${n} ${META[n]?META[n].fecha:""}</div>${row(t1)}${row(t2)}${extra}</div>`;
 }
 function elegir(n,eq){KOWIN[n]=eq;resolverCuadro();renderCuadro();}
 
@@ -1536,6 +1541,7 @@ document.addEventListener("visibilitychange",()=>{if(!document.hidden){clearTime
 .res.live{color:#e5103b;font-weight:800}
 .res.live small{font-weight:700;opacity:.85}
 .mrow input.livein{color:#e5103b;font-weight:800;border-color:rgba(229,16,59,.45)}
+.kog{flex:none;font-variant-numeric:tabular-nums;font-weight:800;min-width:14px;text-align:right}
 .kosc{font-size:11px;font-weight:800;text-align:center;color:var(--muted);margin-top:2px}
 .kosc.live{color:#e5103b}
 td.pts{font-weight:800;font-variant-numeric:tabular-nums;color:var(--blue)}
