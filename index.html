@@ -51,6 +51,32 @@ body[data-theme="bold"] .panel h2{font-size:24px}
 body[data-theme="bold"] .panel .acc,body[data-theme="bold"] .gcard .acc{height:6px}
 body[data-theme="bold"] .pill.active{transform:scale(1.05)}
 body[data-theme="bold"] .panel,body[data-theme="bold"] .gcard{background:#fdfbff;border-color:rgba(30,107,255,.16)}
+/* === ARGENTINA === */
+body[data-theme="argentina"]{
+  --bg2:#eaf4fb; --line:#cfe3f2; --line2:#a9cce6;
+  --text:#0e2a44; --muted:#5f7e98;
+  --page-bg:radial-gradient(900px 360px at 50% -10%,rgba(246,180,14,.18),transparent),linear-gradient(180deg,#eef6fc,#dcecf8);
+  --panel-bg:#ffffff; --th-bg:#eaf4fb; --input-bg:#eef6fc; --pill-bg:#ffffff; --hover:#e2f0fb;
+  --blue:#2f8fd1; --cyan:#2f8fd1;
+  --banner-grad:linear-gradient(135deg,#9fc8ec,#ffffff 58%,#9fc8ec); --banner-lines:.45;
+  --radius:16px; --blur:none;
+  --shadow:0 10px 30px rgba(30,90,150,.12); --shadow-sm:0 3px 12px rgba(30,90,150,.10);
+}
+body[data-theme="argentina"] .banner{position:relative;overflow:hidden}
+body[data-theme="argentina"] .banner .title b{color:#0e2a44}
+body[data-theme="argentina"] .banner .sub{color:#2a5070}
+.arg-deco{display:none}
+body[data-theme="argentina"] .arg-deco{display:block;position:absolute;right:18px;top:50%;transform:translateY(-50%);filter:drop-shadow(0 2px 6px rgba(0,0,0,.18));pointer-events:none}
+@media(max-width:720px){body[data-theme="argentina"] .arg-deco{opacity:.2;right:-14px}}
+.idolos{margin:0 0 14px;background:linear-gradient(180deg,rgba(116,172,223,.18),rgba(116,172,223,.04));border:1px solid var(--line);border-radius:14px;padding:10px 6px 12px}
+.idolos-hd{display:flex;align-items:center;gap:8px;font-weight:900;font-size:12px;letter-spacing:.05em;color:var(--text);padding:2px 10px 9px}
+.idolos-hd span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.idolos-in{display:flex;gap:14px;overflow-x:auto;padding:4px 8px 6px;scroll-snap-type:x proximity}
+.idol{flex:none;width:84px;text-align:center;scroll-snap-align:start}
+.idol-foto{width:72px;height:72px;margin:0 auto;border-radius:50%;overflow:hidden;border:3px solid #74acdf;background:#dceaf6;box-shadow:0 3px 10px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center}
+.idol-foto img{width:100%;height:100%;object-fit:cover;object-position:top center}
+.idol-sil{width:44px;height:44px;color:#9bbdd8}
+.idol-nm{font-size:11px;font-weight:700;margin-top:6px;line-height:1.2;color:var(--text)}
 *{box-sizing:border-box}
 @media (prefers-reduced-motion: reduce){*{transition:none !important;animation:none !important}}
 html,body{overflow-x:hidden}
@@ -358,6 +384,7 @@ select.search{max-width:240px;cursor:pointer}
       <span style="background:var(--green)"></span><span style="background:var(--blue)"></span></div>
     <div class="sub">CANADÁ · MÉXICO · ESTADOS UNIDOS</div>
   </div>
+  <span class="arg-deco" id="argDeco" aria-hidden="true"></span>
 </div>
 
 <div class="toolbar">
@@ -373,6 +400,7 @@ select.search{max-width:240px;cursor:pointer}
   <span class="status" id="status"></span>
 </div>
 <div class="tabs" id="tabs" role="tablist" aria-label="Secciones"></div>
+<div id="idolos" class="idolos" hidden></div>
 <div class="tabwrap">
   <div class="hint">Tip: en Fase de grupos editá cualquier marcador — ahí aparecen los botones RECALCULAR, SIMULAR TODO y RESTAURAR REALES. En el Cuadro, hacé clic en un equipo para hacerlo ganar. En Goleadores, clic en una figurita para ver el dorso.</div>
   <div class="tabpage show" id="tab-calendario" role="tabpanel"></div>
@@ -1506,10 +1534,48 @@ async function bajarNoticias(force){
   }catch(e){}
   _newsCargando=false;renderNoticias();
 }
+/* ===== Tema Argentina: motivos + ídolos ===== */
+function solMayoSVG(s,col){col=col||"#f6b40e";let rays="";
+  for(let i=0;i<16;i++){const a=i/16*2*Math.PI;
+    const tx=(50+46*Math.cos(a)).toFixed(1),ty=(50+46*Math.sin(a)).toFixed(1);
+    const b1x=(50+20*Math.cos(a-0.12)).toFixed(1),b1y=(50+20*Math.sin(a-0.12)).toFixed(1);
+    const b2x=(50+20*Math.cos(a+0.12)).toFixed(1),b2y=(50+20*Math.sin(a+0.12)).toFixed(1);
+    rays+=`<path d="M${tx} ${ty}L${b1x} ${b1y}L${b2x} ${b2y}Z"/>`;}
+  return `<svg viewBox="0 0 100 100" width="${s}" height="${s}" fill="${col}" aria-hidden="true">${rays}<circle cx="50" cy="50" r="21"/><g fill="#fff" opacity=".6"><circle cx="43" cy="46" r="2.6"/><circle cx="57" cy="46" r="2.6"/></g><path d="M42 56 Q50 63 58 56" stroke="#fff" stroke-width="2.6" fill="none" opacity=".6" stroke-linecap="round"/></svg>`;}
+function mateSVG(s,col){col=col||"#7a4a1e";return `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="${col}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 9a5.5 5.5 0 0 0 11 0z" fill="${col}" stroke="none"/><path d="M6.5 9h11"/><path d="M15 9l3.2-5.2"/><circle cx="18.6" cy="3.4" r="1.5" fill="${col}" stroke="none"/></svg>`;}
+function boleadorasSVG(s,col){col=col||"#7a4a1e";return `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="${col}" stroke="${col}" stroke-width="1.1" stroke-linecap="round"><line x1="12" y1="12" x2="5" y2="5.5"/><line x1="12" y1="12" x2="19" y2="6.5"/><line x1="12" y1="12" x2="12" y2="20"/><circle cx="12" cy="12" r="1.6"/><circle cx="5" cy="5.5" r="2.2"/><circle cx="19" cy="6.5" r="2.2"/><circle cx="12" cy="20" r="2.2"/></svg>`;}
+const IDOLOS=["Lionel Messi","Diego Maradona","Alfredo Di Stéfano","Mario Kempes","Gabriel Batistuta","Juan Román Riquelme","Daniel Passarella","Sergio Agüero","Ángel Di María","Javier Mascherano","Hernán Crespo","Omar Sívori","Ubaldo Fillol","Carlos Tévez","Fernando Redondo"];
+let IDOLOFOTOS={}, _idolosCargando=false;
+function renderIdolos(){
+  const cont=document.getElementById("idolos");if(!cont)return;
+  const sil=`<svg viewBox="0 0 24 24" fill="currentColor" class="idol-sil"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7z"/></svg>`;
+  const tiras=IDOLOS.map(n=>{const f=IDOLOFOTOS[n];
+    const cara=f?`<img src="${f}" alt="${esc(n)}" loading="lazy" decoding="async">`:sil;
+    return `<div class="idol"><div class="idol-foto">${cara}</div><div class="idol-nm">${esc(n)}</div></div>`;}).join("");
+  cont.innerHTML=`<div class="idolos-hd">${solMayoSVG(20)}<span>ÍDOLOS DEL FÚTBOL ARGENTINO</span>${mateSVG(18)}${trofeoSVG("mundial",18)}${boleadorasSVG(18)}</div><div class="idolos-in">${tiras}</div>`;
+}
+async function cargarIdolos(){
+  const cont=document.getElementById("idolos");if(!cont)return;
+  if(!Object.keys(IDOLOFOTOS).length){try{const c=localStorage.getItem("wc26idolos");if(c)IDOLOFOTOS=JSON.parse(c)||{};}catch(e){}}
+  renderIdolos();
+  const faltan=IDOLOS.filter(n=>!(n in IDOLOFOTOS));
+  if(!faltan.length||_idolosCargando)return;
+  _idolosCargando=true;
+  try{
+    const url="https://es.wikipedia.org/w/api.php?action=query&format=json&origin=*&prop=pageimages&pithumbsize=240&redirects=1&titles="+encodeURIComponent(faltan.join("|"));
+    const d=await (await fetch(url)).json();const q=d.query||{};
+    const norm={};(q.normalized||[]).forEach(x=>norm[x.from]=x.to);
+    const redir={};(q.redirects||[]).forEach(x=>redir[x.from]=x.to);
+    const byTitle={};Object.values(q.pages||{}).forEach(p=>byTitle[p.title]=(p.thumbnail||{}).source);
+    for(const n of faltan){let t=norm[n]||n;t=redir[t]||t;IDOLOFOTOS[n]=byTitle[t]||null;}
+    try{localStorage.setItem("wc26idolos",JSON.stringify(IDOLOFOTOS));}catch(e){}
+  }catch(e){}
+  _idolosCargando=false;renderIdolos();
+}
 function bannerLines(){
   const svg=document.getElementById("bannerLines");
   const w=window.innerWidth,h=document.querySelector(".banner").clientHeight||104;
-  const cols=["#e5103b","#00b86b","#1e6bff"];let s="";
+  const cols=(THEME==="argentina")?["#74acdf","#f6b40e","#74acdf"]:["#e5103b","#00b86b","#1e6bff"];let s="";
   let i=0;for(let x=-50;x<250;x+=12){const c=cols[i%3];
     s+=`<line x1="${x}" y1="${h+6}" x2="${x+78}" y2="-6" stroke="${c}" stroke-width="3"/>`;
     s+=`<line x1="${w-x}" y1="${h+6}" x2="${w-x-78}" y2="-6" stroke="${c}" stroke-width="3"/>`;i++;}
@@ -1556,13 +1622,16 @@ async function instalarApp(){
 actualizarBotonInstalar();
 
 /* ---------- Temas ---------- */
-const THEMES_UI=[["airy","Claro"],["glass","Oscuro"],["bold","Vibrante"]];
+const THEMES_UI=[["airy","Claro"],["glass","Oscuro"],["bold","Vibrante"],["argentina","Argentina"]];
 let THEME=localStorage.getItem("wc26theme2")||"glass";
 function applyTheme(){
   if(THEME==="airy")document.body.removeAttribute("data-theme");
   else document.body.setAttribute("data-theme",THEME);
   document.getElementById("themesel").innerHTML=THEMES_UI.map(([k,d])=>
     `<button class="tbtn ${THEME===k?"on":""}" onclick="setTheme('${k}')">${d}</button>`).join("");
+  const arg=THEME==="argentina";
+  const dec=document.getElementById("argDeco");if(dec)dec.innerHTML=arg?solMayoSVG(92):"";
+  const id=document.getElementById("idolos");if(id){id.hidden=!arg;if(arg)cargarIdolos();}
   bannerLines();
 }
 function setTheme(t){THEME=t;localStorage.setItem("wc26theme2",t);applyTheme();}
