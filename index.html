@@ -85,6 +85,25 @@ body[data-theme="argentina"] .arg-deco{display:block;position:absolute;right:18p
 .idolm-bio p{margin:0}
 .idolm-link{display:inline-flex;align-items:center;gap:5px;margin-top:14px;font-weight:800;font-size:13px;color:var(--blue);text-decoration:none}
 .idolm-link:hover{text-decoration:underline}
+/* === Argentina: más relieve/profundidad === */
+body[data-theme="argentina"]{
+  --line:#c7dff0; --line2:#9cc6e6;
+  --panel-bg:linear-gradient(180deg,#ffffff,#f1f8fe);
+  --page-bg:radial-gradient(720px 320px at 50% -70px,rgba(246,180,14,.30),transparent 70%),radial-gradient(1300px 760px at 50% -240px,#c4e2f6,transparent 60%),linear-gradient(180deg,#eaf5fc,#d2e8f7 60%,#cde5f6);
+  --shadow:0 16px 40px rgba(18,76,134,.20); --shadow-sm:0 6px 18px rgba(18,76,134,.14);
+}
+body[data-theme="argentina"] .panel,
+body[data-theme="argentina"] .gcard{box-shadow:0 10px 26px rgba(18,76,134,.13),0 1px 0 #fff inset;border:1px solid #cfe4f3}
+body[data-theme="argentina"] .banner{background:linear-gradient(135deg,#6fb0e3,#eef7ff 52%,#6fb0e3);box-shadow:inset 0 -3px 0 rgba(246,180,14,.55),0 8px 22px rgba(18,76,134,.20)}
+body[data-theme="argentina"] .banner::after{content:"";position:absolute;right:5%;top:50%;width:270px;height:270px;transform:translateY(-50%);background:radial-gradient(circle,rgba(246,180,14,.5),transparent 62%);pointer-events:none;z-index:0}
+body[data-theme="argentina"] .banner .title{position:relative;z-index:1}
+body[data-theme="argentina"] .arg-deco{z-index:1;filter:drop-shadow(0 0 16px rgba(246,180,14,.75)) drop-shadow(0 3px 6px rgba(0,0,0,.22))}
+body[data-theme="argentina"] .idolos{background:linear-gradient(180deg,#ffffff,#e9f4fc);border:1px solid #cfe4f3;box-shadow:0 10px 24px rgba(18,76,134,.13)}
+body[data-theme="argentina"] .idol-foto{border:3px solid #fff;outline:2px solid #74acdf;box-shadow:0 5px 14px rgba(18,76,134,.26)}
+body[data-theme="argentina"] .idol:hover .idol-foto{outline-color:#f6b40e}
+body[data-theme="argentina"] .pill{box-shadow:0 2px 8px rgba(18,76,134,.10)}
+body[data-theme="argentina"] .idolm-foto{box-shadow:0 8px 22px rgba(18,76,134,.32)}
+body[data-theme="argentina"] .toolbar .btn{box-shadow:0 3px 10px rgba(18,76,134,.14)}
 .idol-foto{width:72px;height:72px;margin:0 auto;border-radius:50%;overflow:hidden;border:3px solid #74acdf;background:#dceaf6;box-shadow:0 3px 10px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center}
 .idol-foto img{width:100%;height:100%;object-fit:cover;object-position:top center}
 .idol-sil{width:44px;height:44px;color:#9bbdd8}
@@ -1667,7 +1686,7 @@ function applyTheme(){
   document.getElementById("themesel").innerHTML=THEMES_UI.map(([k,d])=>
     `<button class="tbtn ${THEME===k?"on":""}" onclick="setTheme('${k}')">${d}</button>`).join("");
   const arg=THEME==="argentina";
-  const dec=document.getElementById("argDeco");if(dec)dec.innerHTML=arg?solMayoSVG(92):"";
+  const dec=document.getElementById("argDeco");if(dec)dec.innerHTML=arg?solMayoSVG(112):"";
   const id=document.getElementById("idolos");if(id){id.hidden=!arg;if(arg)cargarIdolos();}
   bannerLines();
 }
