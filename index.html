@@ -378,7 +378,6 @@ select.search{max-width:240px;cursor:pointer}
   <div class="tabpage" id="tab-goleadores" role="tabpanel"></div>
   <div class="tabpage" id="tab-grupos" role="tabpanel"></div>
   <div class="tabpage" id="tab-terceros" role="tabpanel"></div>
-  <div class="tabpage" id="tab-noticias" role="tabpanel"></div>
 </div>
 
 <script>
@@ -474,7 +473,7 @@ const DEF_THEME={pri:"#3a567a",sec:"#ffffff",acc:"#2ba4ff",dark:"#152238",pat:"d
 /* ============================ ESTADO ============================ */
 let DATA=null, GM=[], META={}, SCORES={}, REAL={}, KOWIN={}, KOREAL={}, KOSCORE={}, RES={};
 let TABLAS={}, MAPA3={}, KORES={}, ESTILO="spotlight", FLIP={}, PHOTOS={};
-let FSORT="fifa", FDIR=1, FFILTER="all", FQ="", CALFILT="all", CALTEAM="all";
+let FSORT="fifa", FDIR=1, FFILTER="all", FQ="", CALFILT="prox", CALTEAM="all";
 /* asistencias y tarjetas (fuente: ESPN, gratis, sin key, CORS *) — conteo COMPLETO partido x partido */
 const ESPN_EVENTS="https://sports.core.api.espn.com/v2/sports/soccer/leagues/fifa.world/seasons/2026/types/1/events?limit=300";
 const espnSummary=id=>`https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/summary?event=${id}`;
@@ -1100,8 +1099,10 @@ function renderCalendario(){
   if(!DATA)return;
   const ms=(DATA.matches||[]).filter(x=>x.team1&&x.team2);
   const teams=[...new Set(ms.flatMap(x=>[x.team1,x.team2]).filter(t=>!esEtiqueta(t)))].sort();
+  const _h0=new Date();_h0.setHours(0,0,0,0);const _ht=_h0.getTime();
+  const _dts=x=>{const d=localDate(x.date,x.time);return d?new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime():Date.parse((x.date||"2100-01-01")+"T00:00:00Z");};
   let fil=ms.filter(x=>{const ft=(x.score||{}).ft;
-    if(CALFILT==="prox")return !ft; if(CALFILT==="jug")return !!ft; return true;});
+    if(CALFILT==="prox")return _dts(x)>=_ht; if(CALFILT==="jug")return !!ft; return true;});
   if(CALTEAM!=="all")fil=fil.filter(x=>x.team1===CALTEAM||x.team2===CALTEAM);
   const ck=x=>{const d=localDate(x.date,x.time);
     return d?d.getTime():Date.parse((x.date||"2100-01-01")+"T00:00:00Z");};
@@ -1112,7 +1113,7 @@ function renderCalendario(){
     const dayKey=d?d.toDateString():x.date;
     if(dayKey!==lastDay){lastDay=dayKey;
       const ts=d?new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime():Date.parse(x.date);
-      rows+=`<tr class="dsep" data-ts="${ts}"><td colspan="3">${d?diaTxtD(d):x.date}</td></tr>`;}
+      rows+=`<tr class="dsep" data-ts="${ts}"><td colspan="2">${d?diaTxtD(d):x.date}</td></tr>`;}
     const ft=(x.score||{}).ft;
     // eliminatoria: usar el cuadro calculado (consistente con la pestaña Cuadro)
     const par=(x.num!=null&&KORES[x.num])?KORES[x.num]:[x.team1,x.team2];
@@ -1126,24 +1127,32 @@ function renderCalendario(){
     const prov=(x.num!=null&&!koDefinido(x.num))?`<span class="tag-prov">por confirmar</span>`:"";
     const part=`<span class="tagr">${esc(rondaTxt(x))}</span>${flagImg(t1)} ${esc(corto(t1,15))} ${mid} ${esc(corto(t2,15))} ${flagImg(t2)}${prov}`;
     const gi=(DATA.matches||[]).indexOf(x);
-    rows+=`<tr class="mclic" onclick="abrirPartido(${gi})"><td class="hora">${d?hmD(d):horaSede(x.time)}</td><td class="pt">${part}</td>`+
-      `<td class="sede">${esc(x.ground||"")}</td></tr>`;
+    rows+=`<tr class="mclic" onclick="abrirPartido(${gi})"><td class="hora">${d?hmD(d):horaSede(x.time)}</td><td class="pt">${part}</td></tr>`;
   }
-  const chips=[["all","Todos"],["prox","Próximos"],["jug","Jugados"]].map(([k,d])=>
+  const chips=[["all","Todos"],["prox","Desde hoy"],["jug","Jugados"]].map(([k,d])=>
     `<button class="fbtn ${CALFILT===k?'on':''}" onclick="setCalFilter('${k}')">${d}</button>`).join("");
   const opts=`<option value="all">Todas las selecciones</option>`+
     teams.map(t=>`<option value="${esc(t)}" ${CALTEAM===t?"selected":""}>${esc(t)}</option>`).join("");
-  document.getElementById("tab-calendario").innerHTML=`<div class="panel">
-    <div class="acc" style="background:#8b5cf6"></div>
-    <h2>CALENDARIO</h2>
-    <div class="psub">Horarios en tu hora local · ${fil.length} partidos</div>
-    <div class="pbody">
-      <div class="fbar"><button class="fbtn" onclick="scrollHoy()">${icon('calendar')} Hoy</button>
-        <select class="search" onchange="setCalTeam(this.value)">${opts}</select></div>
-      <div class="fbar">${chips}</div>
-      <div class="ftwrap"><table class="rank cal"><thead><tr>
-      <th>HORA</th><th>PARTIDO</th><th>SEDE</th></tr></thead>
-      <tbody>${rows}</tbody></table></div></div></div>`;
+  document.getElementById("tab-calendario").innerHTML=`<div class="cal-split">
+    <div class="panel cal-left">
+      <div class="acc" style="background:#8b5cf6"></div>
+      <h2>CALENDARIO</h2>
+      <div class="psub">Hora local · ${fil.length} partidos</div>
+      <div class="pbody">
+        <div class="fbar"><button class="fbtn" onclick="scrollHoy()">${icon('calendar')} Hoy</button>
+          <select class="search" onchange="setCalTeam(this.value)">${opts}</select></div>
+        <div class="fbar">${chips}</div>
+        <div class="ftwrap cal-scroll"><table class="rank cal"><tbody>${rows}</tbody></table></div>
+      </div>
+    </div>
+    <div class="panel cal-right">
+      <div class="acc" style="background:#ef476f"></div>
+      <h2>NOTICIAS</h2>
+      <div class="psub">Resúmenes · fuente: ESPN Deportes</div>
+      <div class="pbody"><div id="news-col"></div></div>
+    </div>
+  </div>`;
+  bajarNoticias();
 }
 /* ===== Ventana emergente: detalle del partido ===== */
 let _modKey=null;
@@ -1433,7 +1442,7 @@ async function bajarEspnStats(){
 const TABDEF=[["calendario","CALENDARIO","#8b5cf6"],["cuadro","CUADRO / ELIMINATORIAS","#00b86b"],
   ["fifa","RANKING FIFA","#00b8d4"],["stats","ESTADÍSTICAS","#e5103b"],
   ["goleadores","GOLEADORES","#f5b301"],["grupos","FASE DE GRUPOS","#1e6bff"],
-  ["terceros","MEJORES TERCEROS","#ee9b00"],["noticias","NOTICIAS","#ef476f"]];
+  ["terceros","MEJORES TERCEROS","#ee9b00"]];
 function renderTabs(){
   document.getElementById("tabs").innerHTML=TABDEF.map(([k,t,c],i)=>
     `<button class="pill ${i===0?"active":""}" id="pill-${k}" role="tab" aria-selected="${i===0}"
@@ -1445,7 +1454,6 @@ function tab(k,c){
   const pl=document.getElementById("pill-"+k);pl.classList.add("active");pl.style.background=c;pl.setAttribute("aria-selected","true");
   document.querySelectorAll(".tabpage").forEach(p=>p.classList.remove("show"));
   document.getElementById("tab-"+k).classList.add("show");
-  if(k==="noticias")bajarNoticias();
 }
 /* ===== NOTICIAS (resúmenes desde ESPN Deportes, español) ===== */
 const NEWS_URL="https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/news?lang=es&region=ar&limit=40";
@@ -1455,29 +1463,25 @@ function _haceRel(iso){const t=Date.parse(iso);if(!t)return "";let s=(Date.now()
   if(s<86400)return "hace "+Math.round(s/3600)+" h";
   return "hace "+Math.round(s/86400)+" d";}
 function renderNoticias(){
-  const cont=document.getElementById("tab-noticias");if(!cont)return;
-  let cuerpo;
+  const cont=document.getElementById("news-col");if(!cont)return;
   if(!NOTICIAS.length){
-    cuerpo=_newsCargando?`<div class="md-load">Cargando noticias…</div>`
-      :`<div class="hint">No se pudieron cargar las noticias (requiere conexión). Probá de nuevo.</div>`;
-  }else{
-    const play=`<span class="news-vid"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>`;
-    cuerpo=`<div class="news-grid">`+NOTICIAS.map(n=>{
-      const vid=n.type==="Media";
-      const img=n.img?`<div class="news-img" style="background-image:url('${n.img}')">${vid?play:""}</div>`:"";
-      return `<a class="news-card" href="${n.link}" target="_blank" rel="noopener">
-        ${img}
-        <div class="news-body">
-          ${vid?`<span class="news-tag">Video</span>`:""}
-          <div class="news-h">${esc(n.headline)}</div>
-          ${n.desc?`<div class="news-d">${esc(n.desc)}</div>`:""}
-          <div class="news-meta">${esc(_haceRel(n.published))} · ESPN</div>
-        </div></a>`;
-    }).join("")+`</div>`;
+    cont.innerHTML=_newsCargando?`<div class="md-load">Cargando noticias…</div>`
+      :`<div class="hint">No se pudieron cargar las noticias (requiere conexión). Probá ACTUALIZAR.</div>`;
+    return;
   }
-  cont.innerHTML=`<div class="panel"><div class="acc" style="background:#ef476f"></div>
-    <h2>NOTICIAS</h2><div class="psub">Resúmenes · fuente: ESPN Deportes</div>
-    <div class="pbody">${cuerpo}</div></div>`;
+  const play=`<span class="news-vid"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>`;
+  cont.innerHTML=`<div class="news-grid">`+NOTICIAS.map(n=>{
+    const vid=n.type==="Media";
+    const img=n.img?`<div class="news-img" style="background-image:url('${n.img}')">${vid?play:""}</div>`:"";
+    return `<a class="news-card" href="${n.link}" target="_blank" rel="noopener">
+      ${img}
+      <div class="news-body">
+        ${vid?`<span class="news-tag">Video</span>`:""}
+        <div class="news-h">${esc(n.headline)}</div>
+        ${n.desc?`<div class="news-d">${esc(n.desc)}</div>`:""}
+        <div class="news-meta">${esc(_haceRel(n.published))} · ESPN</div>
+      </div></a>`;
+  }).join("")+`</div>`;
 }
 async function bajarNoticias(force){
   if(_newsCargando)return;
@@ -1796,7 +1800,11 @@ body[data-theme="glass"] .md{background:#141d33}
 .pod-it.oro .pod-m{color:#e3a900}
 .pod-it.plata .pod-m{color:#9aa3b2}
 .pod-it.bronce .pod-m{color:#b5763a}
-.news-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(258px,1fr));gap:14px}
+.cal-split{display:grid;grid-template-columns:1fr 3fr;gap:16px;align-items:start}
+.cal-left{position:sticky;top:12px}
+.cal-scroll{max-height:74vh;overflow:auto}
+@media(max-width:760px){.cal-split{grid-template-columns:1fr}.cal-left{position:static}.cal-scroll{max-height:none}}
+.news-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
 .news-card{display:flex;flex-direction:column;background:var(--panel-bg);border:1px solid var(--line);border-radius:12px;overflow:hidden;text-decoration:none;color:var(--text);transition:transform .12s,box-shadow .12s}
 .news-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-sm)}
 .news-img{position:relative;width:100%;aspect-ratio:16/9;background:#0a1020 center/cover no-repeat;flex:none}
