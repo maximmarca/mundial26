@@ -1980,7 +1980,7 @@ body[data-theme="glass"] .md{background:#141d33}
 .cal-split{display:grid;grid-template-columns:1fr 3fr;gap:16px;align-items:start}
 .cal-left{position:sticky;top:12px}
 #news-col{max-height:80vh;overflow:auto;padding-right:4px}
-@media(max-width:760px){.cal-split{grid-template-columns:1fr}.cal-left{position:static}#news-col{max-height:none;overflow:visible}}
+@media(max-width:760px){.cal-split{grid-template-columns:1fr}.cal-left{position:static;order:2}.cal-right{order:1}#news-col{max-height:none;overflow:visible}}
 .cal-list{display:flex;flex-direction:column}
 .cal-day{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:11px 2px 5px;border-bottom:1px solid var(--line);margin-bottom:3px}
 .cal-day:first-child{padding-top:2px}
