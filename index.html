@@ -590,12 +590,12 @@ function parse(){
       REAL[id]=ft?[...ft]:null;
     }else if(num!=null){
       META[num]={fecha:m.date||""};
-      const sc=m.score||{};const ft=sc.ft;
-      if(Array.isArray(ft)&&ft.length===2&&m.team1&&m.team2&&!esEtiqueta(m.team1)&&!esEtiqueta(m.team2)){
-        let w=ft[0]>ft[1]?m.team1:(ft[1]>ft[0]?m.team2:null);
+      const sc=m.score||{};const et=Array.isArray(sc.et)&&sc.et.length===2?sc.et:null;const fin=et||sc.ft;
+      if(Array.isArray(fin)&&fin.length===2&&m.team1&&m.team2&&!esEtiqueta(m.team1)&&!esEtiqueta(m.team2)){
+        let w=fin[0]>fin[1]?m.team1:(fin[1]>fin[0]?m.team2:null);
         if(!w&&Array.isArray(sc.p))w=sc.p[0]>sc.p[1]?m.team1:m.team2;
         if(w)KOREAL[+num]=w;
-        KOSCORE[+num]={t1:m.team1,t2:m.team2,ft:[+ft[0],+ft[1]],p:Array.isArray(sc.p)?[+sc.p[0],+sc.p[1]]:null};
+        KOSCORE[+num]={t1:m.team1,t2:m.team2,ft:[+fin[0],+fin[1]],et:!!et,p:Array.isArray(sc.p)?[+sc.p[0],+sc.p[1]]:null};
       }
     }
   }
@@ -826,7 +826,7 @@ function mboxmHTML(n){
     return `<div class="rowm ${w?'win':''} ${clic?'clic':''}" ${clic?`onclick="elegir(${n},'${esc(eq).replace(/'/g,"\\'")}')"`:""}>`+
       `${flagImg(eq)}<span>${esc(corto(eq,20))||"(por definir)"}</span>${gol(eq)}</div>`;};
   const prov=(!real&&!koDefinido(n))?" prov":"";
-  const extra=sR?(sR.p?`<div class="kosc">pen. ${sR.p[0]}-${sR.p[1]}</div>`:""):_koLive(t1,t2);
+  const extra=sR?(sR.p?`<div class="kosc">pen. ${sR.p[0]}-${sR.p[1]}</div>`:(sR.et?`<div class="kosc">t.s.</div>`:"")):_koLive(t1,t2);
   return `<div class="mboxm ${fin?'final':(real?'real':'')}${prov}"><div class="cab cabc" onclick="abrirPartidoNum(${n})" title="Ver detalle del partido">#${n} ${META[n]?META[n].fecha:""} ${icon('info')}</div>${row(t1)}${row(t2)}${extra}</div>`;
 }
 function renderCuadroMobile(){
@@ -912,7 +912,7 @@ function boxHtml(n,x,y){
   const row=(eq)=>{const w=gan===eq&&eq,clic=eq&&!esEtiqueta(eq);
     return `<div class="row ${w?"win":""} ${clic?"clic":""}" ${clic?`onclick="elegir(${n},'${esc(eq).replace(/'/g,"\\'")}')"`:""}>
       ${flagImg(eq)}<span>${esc(corto(eq,16))||"(por definir)"}</span>${gol(eq)}</div>`;};
-  const extra=sR?(sR.p?`<div class="kosc">pen. ${sR.p[0]}-${sR.p[1]}</div>`:""):_koLive(t1,t2);
+  const extra=sR?(sR.p?`<div class="kosc">pen. ${sR.p[0]}-${sR.p[1]}</div>`:(sR.et?`<div class="kosc">t.s.</div>`:"")):_koLive(t1,t2);
   return `<div class="${cls}" style="left:${x}px;top:${y}px">
     <div class="cab cabc" onclick="abrirPartidoNum(${n})" title="Ver detalle del partido">#${n} ${META[n]?META[n].fecha:""} ${icon('info')}</div>${row(t1)}${row(t2)}${extra}</div>`;
 }
@@ -1246,7 +1246,8 @@ function abrirPartido(i){
   const orden=_navOrden(),pos=orden.indexOf(i),hayPrev=pos>0,haySig=pos>=0&&pos<orden.length-1;
   const par=(x.num!=null&&KORES[x.num])?KORES[x.num]:[x.team1,x.team2];
   const t1=par[0],t2=par[1];
-  const ft=(x.score||{}).ft, pen=(x.score||{}).p;
+  const _scb=(x.score||{}),esET=Array.isArray(_scb.et)&&_scb.et.length===2;
+  const ft=esET?_scb.et:_scb.ft, pen=_scb.p;
   const lv=liveDe(t1,t2);
   const d=localDate(x.date,x.time);
   let estado;
@@ -1264,7 +1265,7 @@ function abrirPartido(i){
     <button class="md-x" onclick="cerrarPartido()" aria-label="Cerrar">✕</button>
     <div class="md-top">
       <div class="md-team"><div class="md-fl">${flagImg(t1)}</div><div class="md-nm">${esc(t1)}</div></div>
-      <div class="md-sc">${marcador}<div class="md-st">${estado}</div>${pen?`<div class="md-pen">${icon('ball')} Penales <b>${pen[0]} - ${pen[1]}</b></div>`:""}</div>
+      <div class="md-sc">${marcador}<div class="md-st">${estado}</div>${pen?`<div class="md-pen">${icon('ball')} Penales <b>${pen[0]} - ${pen[1]}</b></div>`:(esET?`<div class="md-pen">Tiempo suplementario</div>`:"")}</div>
       <div class="md-team"><div class="md-fl">${flagImg(t2)}</div><div class="md-nm">${esc(t2)}</div></div>
     </div>
     <div class="md-meta">${esc(rondaTxt(x))}${x.ground?` · ${esc(x.ground)}`:""}${d?` · ${diaTxtD(d)} ${hmD(d)}`:(x.date?` · ${esc(x.date)}`:"")}</div>
